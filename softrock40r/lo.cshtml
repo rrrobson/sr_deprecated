@@ -1,0 +1,275 @@
+﻿@using SoftrockDocsStagingModel;
+
+@{  
+    //*********driver variables***************
+    var stageAbbreviation = "lo";
+    var projectFolder = "softrock40r";
+    //**************************************************
+
+
+    
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+    Page.bandName = Session["bandName"];
+    string theBandName = ((string)Session["bandName"]).Trim();
+    var subHarmonics = (theBandName == "20m" || Page.bandName == "30m");
+    var xtalFreq = 0M;
+    if(subHarmonics)
+    {
+        switch (theBandName)
+        {   case "20m":
+                xtalFreq=18.730M;
+                break;
+            case "30m":
+                xtalFreq = 13.5M;
+                break;
+            default:
+                break;
+        }
+    }
+
+    var db = new SoftrockDocsStagingEntities();
+    //find the stage using projectId and stageAbbreviation
+    var thisStage = db.Stages
+        .Where(s => s.projectId == theProjectId && s.StageAbbreviation == stageAbbreviation)
+        .SingleOrDefault()
+    ;
+
+
+    Page.Title = thisStage.Project.projectName + ":  " + thisStage.StageName;
+
+    var allBands = Funcs.allBands();
+    var bomLines = from b in db.BOMs
+                   where b.projectId == theProjectId
+                   && b.Stage.StageAbbreviation == thisStage.StageAbbreviation
+                   && (b.bandId == theBandId || b.bandId == allBands)
+                   orderby b.bottom_or_top
+                          , b.Stage.buildSequence
+                   select b;
+}
+
+@*Intro, Schematics, and Layouts*@
+<h2>Introduction</h2>
+<h3>General Info About the Stage</h3>
+<p>Recollect that Q2 (part of this stage) was, for convenience, 
+installed in the preceding (Power Supply) stage.  This stage provides
+the Local Oscillator and the two Quadrature outputs.</p>
+<h3>Theory of Operation</h3>
+<p>The Local Oscillator stage implements a basic Colpitts Crystal Oscillator with a 
+buffer stage to increase the signal level. The oscillator produces a signal that is 
+at the crystal's specified fundamental frequency.</p>
+<p>For the lower bands, this frequency is the receiver's "center frequency; 
+for 30 and 20 meter bands, this frequency is four-thirds the 
+desired "center frequency". @if(subHarmonics){<text>(See the discussion on SubHarmonics, below)</text>}</p>
+<p>In reality, for each frequency the crystal circuit will oscillate at a slightly 
+lower frequency (~ - 1 kHz), due to the capacitive divider (C4/C5) pulling the 
+crystal down somewhat. The effect is more pronounced for the higher bands.</p>
+<p>The output of the Colpitts Oscillator is fed to U1, which has the effect of 
+dividing the oscillator's fundamental frequency by 4 AND (most importantly) shifting the 
+phase of its 2 output signals, such that they are in quadrature 
+(90 degrees apart in phase)</p>
+
+@if(subHarmonics)
+{
+    <text>
+    <h4>Sub-harmonic Sampling</h4>
+<p>Alan, G4ZFQ points out that on the 30m and 20m receivers, the Local Oscillator produces a 
+signal that is 4/3 times the desired center frequency as opposed to the 4x 
+the center frequency output for the lower band models. 
+</p>
+
+<p>"Subharmonic" works like this:</p>
+<ul>
+<li>The LO outputs a @xtalFreq MHz signal that goes to the 
+dividers /4, resulting in a @(xtalFreq/4) MHz square wave ( rich in odd harmonics) being fed 
+to the mixer.</li> 
+<li>At the mixer, a strong 3rd harmonic is present on the clock inputs, 
+along with the fundamental of @(xtalFreq/4) MHz. The @(xtalFreq/4) fundamental multiplied by 3 yields 
+the third harmonic of @(3*xtalFreq/4) MHZ.</li> 
+<li>The Bandpass filter (BPF) performs the essential 
+function of severely attenuating any signals centered around the @(xtalFreq/4) MHz fundamental 
+frequency and first harmonmic, but allows 20m signals centering around the third 
+harmonic of the @(xtalFreq/4) MHz LO output. </li>
+<li>The result is that the mixer is dealing with signals 
+in the passband, centering on @(3*xtalFreq/4) MHz, as though the dividers were passing a 
+fundamental frequency of @(3*xtalFreq/4)  to the mixer. BPFs are all that stop Softrocks from 
+working on unwanted frequencies!</li>
+</ul>
+</text>
+    }@*end subharmonics*@
+
+@MyHelpers.renderStageSchematic(thisStage.StageAbbreviation, projectFolder)
+<h2>Board Layouts</h2>
+@MyHelpers.renderBoardTopLayout(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderBoardBottomLayout(thisStage.StageAbbreviation, projectFolder)    
+
+@********************** Stage BOM *******************************@
+@MyHelpers.renderStageBom(theProjectId, thisStage.StageAbbreviation, theBandId)
+
+
+<h2>Detailed Build Steps</h2>
+<p>As in the preceding stage, the critical tasks here are 
+installation - first - of the active components, Q2, Q3, and U1.
+Installing them prior to installing the passive SMT 1206 components
+gives you a chance to work on them without being blocked by adjacent 
+comnponents and inspect each from all angles.  
+The components for each step are listed in the order of 
+their installation sequence.</p>
+<p>The other tricky part is the installation of the crystal, X1.
+It must be installed with sufficient gap between the bottom of 
+the case and the two lead holes' plating.  
+Also, it must be bent over 90 degrees, to lay flat on its 
+side snugly against the board.  
+Once it is snugged up against the board, a ground wire should 
+be soldered to the case and to the ground lead hole 
+(located directly above the "f" in "Softrock" on the board).</p>
+@foreach (var s in thisStage.Steps.OrderBy(s => s.sequence))
+{
+    <h3>@s.StepName</h3>
+    if (!String.IsNullOrEmpty(s.description))
+    {
+        @Html.Raw(s.description)
+    }
+
+<table>
+<tr><th>Check</th><th>Designation</th>
+<th>Component</th>
+<th>top/Bottom</th><th>Marking</th><th>Image</th>
+<th>Band</th></tr>
+@foreach (var b in bomLines
+    .Where(b => b.stepId == s.StepId)
+    .OrderBy(b => b.stepSeq)
+    .ThenBy(b => b.designation)
+    )
+{
+@MyHelpers.renderStepBomLine(b)    
+}
+</table>
+}
+
+@***********************testing*****************************@
+
+
+<a name="completedphotos"></a>
+<h2>Completed Photos</h2>
+@MyHelpers.completedPhotosCaveat("20m")
+@MyHelpers.renderCompletedTop(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderCompletedBottom(thisStage.StageAbbreviation, projectFolder)
+
+<a name="testing"></a>
+<h2>Testing</h2>
+<h3>Overview</h3>
+<p>Before doing any testing, use a bright light and good magnification
+to verify correct soldering.  Soldering problems are the greatest 
+cause of test failures.  
+Pay particular attention to Q2, Q3, and U1.  </p>
+
+@MyHelpers.renderSR40R_railTest()
+
+
+<h3>Voltage Tests - Topside</h3>
+@MyHelpers.renderProjectImage(projectFolder,"lo_voltages_top.gif","topside lo voltage test points")
+
+<p>Connect the USB Plug to a USB (power) source.  
+Measure the voltages (WRT ground) at the pins indicated 
+in the above figure.  </p>
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "Q2-2 - emitter", "Vdc","1.75","1.99") 
+@MyHelpers.renderTestRow("2", "Q3-3 - collector", "Vdc","2.12","2.37") 
+@MyHelpers.renderTestRow("3", "blue test points in above figure", "Vdc", "2.15", "2.1") 
+</table>
+<p>(pins 3 and 11 of U1 will carry the signal from the oscillator and
+will vary in voltage depending upon your DMM (due to the ac 
+components on those pins).</p>
+@*******************************************************@
+
+<h3>Voltage Tests - Underside</h3>
+@MyHelpers.renderProjectImage(projectFolder, "lo_u1_voltages.gif", "voltage test points")
+<p>When measuring pin voltages on U1, test the voltage on BOTH the 
+pin and the pad.  This will drive out any cases where the pad has
+the requisite voltage, but a bad solder joint causes
+the pin not to have the same voltage.</p>
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "U1 - Pin 1", "Vdc", "4.3", "4.23")
+@MyHelpers.renderTestRow("2", "U1 - Pin 2", "Vdc", "2.15", "2.11")
+@MyHelpers.renderTestRow("4", "U1 - Pin 4", "Vdc", "4.3", "4.23")
+@MyHelpers.renderTestRow("5", "U1 - Pin 5", "Vdc", "2.15", "2.11")
+@MyHelpers.renderTestRow("6", "U1 - Pin 6", "Vdc", "2.15", "2.10")
+@MyHelpers.renderTestRow("7", "U1 - Pin 7", "Vdc", "0", "0")
+@MyHelpers.renderTestRow("8", "U1 - Pin 8", "Vdc", "2.15", "2.10")
+@MyHelpers.renderTestRow("9", "U1 - Pin 9", "Vdc", "2.15", "2.11")
+@MyHelpers.renderTestRow("10", "U1 - Pin 10", "Vdc", "4.3", "4.23")
+@MyHelpers.renderTestRow("12", "U1 - Pin 12", "Vdc", "2.15", "2.10")
+@MyHelpers.renderTestRow("13", "U1 - Pin 13", "Vdc", "4.3", "4.23")
+@MyHelpers.renderTestRow("14", "U1 - Pin 14", "Vdc", "4.3", "4.23")
+@MyHelpers.renderTestRow("15", "Q2-1 - base", "Vdc","2.15","2.02") 
+@MyHelpers.renderTestRow("16", "Q3-1 - base", "Vdc","4.11","4.12") 
+</table>
+<p>(pins 3 and 11 will carry the signal from the oscillator and
+will vary in voltage depending upon your DMM (due to the ac 
+components on those pins).</p>
+@*******************************************************@
+
+<h5>Potential issues:</h5>
+<ul>
+<li>All voltages are way off of the nominals:  check your DMM 
+(author experienced this when using cheap $1.99 DMM; 
+went to $30 DMM and got above values)</li>
+<li></li>
+</ul>
+
+@{
+    //develop the test frequencies (funcamental and one-quarter)from BOM value
+    var fundamental = 0M;
+    var quarter = 0M;
+    var crystal =
+        (from b in db.BOMs
+         where b.designation == "X01" && b.bandId==theBandId
+         select b).SingleOrDefault();
+    if (crystal != null)
+    {
+        fundamental = (decimal)crystal.Component.numericValue / 1000000;
+        quarter = fundamental / 4;
+    }
+}
+
+<h3>Frequency Tests</h3>
+<div style="float:left;">
+@MyHelpers.renderProjectImage(projectFolder, "lo_freq_test_points.gif", "LO frequency test points")
+
+<p>Connect the USB Plug to a USB (power) source.  
+Tack-solder a short (~6 inch) lead of wire to each of 
+the test points shown in this graphic.  These leads will act as 
+radiating "antennae" for output of the oscillators and the two outputs of the 
+of the divider chip, U1.</p>
+<p>Then tune a receiver to @fundamental MHz and listen for
+the signal from the oscillator.</p>
+<p>Then tune a radio to @quarter MHz
+and listen for the signal at each of the "clk" "antennae". </p>
+</div>
+<h5>Potential issues:</h5>
+<ul>
+<li></li>
+</ul>
+
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "Osc on topside", "MHz", String.Format("{0:###.###}", fundamental), "n/a")
+@MyHelpers.renderTestRow("2", "clk-0 on topside", "MHz", String.Format("{0:###.###}", quarter), "n/a")
+@MyHelpers.renderTestRow("3", "clk-1 on topside", "MHz", String.Format("{0:###.###}", quarter), "n/a")
+</table>
+<h2>Next - 
+<a href="@Href("~/"+projectFolder+"/bpf")">
+Band-Pass Filter Stage</a>
+</h2>

@@ -1,0 +1,56 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    var theStageId = Request["StageId"].AsInt();
+    var db = new SoftrockDocsStagingEntities();
+    var theStage=
+        (
+        from s in db.Stages
+        where s.StageId==theStageId
+        select s
+        ).SingleOrDefault();
+        
+    Page.Title = "Details for Stage = "+ theStage.StageName;        
+}
+<table>
+<tr>
+    <td>ID</td>
+    <td>@theStage.StageId</td>
+</tr>
+<tr>
+    <td>Project</td>
+    <td>@theStage.Project.projectName</td>
+</tr>
+<tr>
+    <td>Build Sequence</td>
+    <td>@theStage.buildSequence</td>
+</tr>
+<tr>
+    <td>Stage Name (abbrev)</td>
+    <td>@theStage.StageName (@theStage.StageAbbreviation)   </td>
+</tr>
+<tr>
+    <td>Intro</td>
+    <td>@Html.Raw(theStage.intro)</td>
+</tr>
+<tr>
+    <td>Theory</td>
+    <td>@Html.Raw(theStage.theory)</td>
+</tr>
+</table>
+@if (theStage.Steps.Count > 0)
+{<p>Steps in thie Stage:</p>
+<ol>
+@foreach (var s in theStage.Steps.OrderBy(s => s.sequence))
+{
+    <li>@s.StepName</li>
+}
+</ol>
+}
+else
+{<p>(there are no steps defined for this stage)</p>}
+
+<a href="@Href("~/Stages?projectId="+theStage.projectId)">
+Return to @theStage.Project.projectName Stages Index</a>
+&nbsp;&nbsp;&nbsp;
+<a href="@Href("~/Steps/?stageId="+theStage.StageId)">
+Add a Step</a>

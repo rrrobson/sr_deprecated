@@ -1,0 +1,84 @@
+﻿@{
+    Page.Title = "Add New User Accounts From Members DB";
+    
+    
+    if(IsPost)
+    {
+        var dbSec = Database.Open("StarterSite");
+        var dbMbr = Database.Open("rafino_members");
+        var qrySec = "SELECT email,memberId FROM userProfile WHERE memberId IS NOT NULL";
+        var qryMbr = "SELECT [e-mail] as email, id as memberId, [name L] + ', ' + [name f] as fullName"
+            + ", [no address] as statusCode "
+            + " FROM rafino_member "
+            + " WHERE [no address] NOT in ('I','X','D', '1') "
+            + " AND [e-mail] is not null "
+            + " ORDER BY [e-mail]";
+
+        var users = dbSec.Query(qrySec);
+        var members = dbMbr.Query(qryMbr);
+        @: Count of users with mbrids: @users.Count() <br />
+        @: Count of members who should be users: @members.Count() <br />
+
+        @*following Query selects members ehere member email is NOT IN users email *@
+        var newAccts = from 
+                       m in members 
+                       where !users.Any(u => u.email==m.email)
+                       select new
+                       {
+                           email = m.email,
+                           memberId = m.memberid,
+                           statusCode = m.statusCode,
+                           fullName = m.fullName
+                       };
+        @:Count of new accounts to create: @newAccts.Count()<br /><br />
+        var accountCreationErrorMessage="";
+        var isValid=true;
+        foreach(var account in newAccts)
+        {
+            @:Creating user profile/membership for (@account.memberId=@account.statusCode @account.fullName using @account.email <br />
+            
+            try
+            {
+                // Insert email into the profile table
+                // Adds rafino memberid to Profile (newly added column)
+                if(Request["mode"]=="doit")
+                {
+                dbSec.Execute("INSERT INTO UserProfile (Email, memberid) VALUES (@0, @1)"
+                    , account.email, account.memberId);
+                }
+
+             // Create and associate a new entry in the membership database.
+             // If successful, continue processing the request
+                if(Request["mode"]=="doit")
+                {
+                     WebSecurity.CreateAccount(account.email, account.email, false);
+                }
+             accountCreationErrorMessage = account.fullName + " login account successfully created, using " + account.email;
+             isValid = true;
+            }
+            catch (System.Web.Security.MembershipCreateUserException e)
+            {
+                isValid = false;
+                accountCreationErrorMessage = e.ToString();
+            }
+            if (!isValid)
+            {<p style="color:Red;">@account.email+@account.fullName: @accountCreationErrorMessage</p>}
+    
+        }
+                       
+    }
+    
+}
+    <h2>Purpose:</h2>
+    <p>This is a conversion routine.  It will scan the members db and pull out all 
+    members who have an email address for which there is currently NO user account setup.</p>
+    <p>It will then insert new user accounts and confirmed membership entries, with 
+    the login id = email and the password = email.</p>
+    <p>No emails will be provided to the users.</p>
+    <p>No accounts created for status codes I, X, D, or 1</p>
+    <form method="post" action="">
+    <label>Select the Operation Mode</label><br />
+    <input type="radio" name="mode" value="testing" checked="checked"/>Test - no database updates<br />
+    <input type="radio" name="mode" value="doit" />For real - UPDATE the DB<br />
+    <input type = "submit" value="Start the Process" />
+    </form>

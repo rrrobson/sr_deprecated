@@ -1,0 +1,118 @@
+﻿@{
+    //Test call:     Admin/UserProfileEdit?userId=463
+    Page.Title = "Edit User Profile";
+    if(!Roles.IsUserInRole("admin"))
+    {
+        Response.Redirect(Href("~/AuthError"));
+    }
+    var userId=Request["userId"];
+    var fullName = Request["fullName"];
+    var email=Request["email"];
+    var memberId=Request["memberId"];
+    var member = Request["member"];
+    
+    //debug-------------------------------------------
+    //userId = "463";
+    //end debug---------------------------------------
+    
+    var dbSec=Database.Open("StarterSite");
+    var theUser=dbSec.QuerySingle("SELECT * FROM userProfile WHERE userId=@0",userId);
+
+    email = theUser.email;
+    if(theUser.memberId==null)
+    {
+        memberId = "-1";
+        member = "anonymous";
+    }
+    else
+    {
+        memberId = theUser.memberId.ToString();
+    }
+   
+    var deletionYesButton="Yes - DELETE it!";
+    var deletionNoButton="No.";
+    var action="";
+    var actionAccomplished=false;
+    if (IsPost)
+    {
+        action = Request["action"];
+        @action<br />
+
+        if (Request["confirmation"]==deletionYesButton && action=="Delete" && theUser.userId!=null)
+        {
+            try
+            {
+                foreach(var theRole in Roles.GetRolesForUser(email))
+                {
+                    Roles.RemoveUserFromRole(email, theRole);
+                }
+                
+                dbSec.Execute("DELETE from webpages_Membership WHERE userId=@0", theUser.userId);
+                dbSec.Execute("DELETE FROM userProfile WHERE userId=@0", theUser.userId);
+                @:OK deleted - click "Home" to exit<br />
+                actionAccomplished = true;
+            }
+            catch (Exception e)
+            {
+                @:Error deleting Membership and profile: @e.Message
+            }
+        }
+        if (Request["confirmation"] == deletionNoButton && action == "Delete")
+        {
+            @:ok - NOT deleted <br />
+            action = "";
+        }
+        if (action == "Update")
+        {
+            try
+            {
+                dbSec.Execute("UPDATE userProfile SET email=@0, memberId=@1 WHERE userId=@2",
+                    email, memberId, theUser.userId);
+            }
+            catch (Exception e)
+            {
+                @:error UPDATING user profile @e.Message
+            }
+            @:OK - Updated - click "Home" to exit<<br />
+            actionAccomplished = true;
+        }
+    }
+        
+}
+<form method="post" action="">
+    <table>
+        <tr>
+            <td><label>Security Acct UserId:</label></td>
+            <td><label>@userId</label></td>
+        </tr>
+            <tr><td><label>Member Name:</label></td>
+            <td><label>@fullName</label></td>
+        </tr>
+        <tr>
+            <td><label for="email">Email Address:</label></td>
+            <td><input type="text" name="email" value=@email /></td>
+        </tr>
+
+        <tr>
+            <td><label for="memberId">Member Id:</label></td>
+            <td><input type="text" name="memberId" value="@memberId" />@member</td>
+        </tr>
+
+    @if (!actionAccomplished)
+    {
+        <tr>
+            <td><input type="submit" name="action" value="Update" /></td>
+            <td><input type="submit" name="action" value="Delete" /></td>
+        </tr>    
+    }
+    </table>
+</form>
+@if (action == "Delete" && !actionAccomplished)
+{
+    <form action="" method="post">
+    <label style="color:Red;">Are sure you want to DELETE this security account?</label><br />
+    <input type="hidden" name = "action" value="@action" />
+    <input style="background-color:Red;" type ="submit" name="confirmation" value = "@deletionYesButton" />
+    <input style="background-color:Green;"  type="submit" name="confirmation" value = "@deletionNoButton"  />
+    </form>
+}

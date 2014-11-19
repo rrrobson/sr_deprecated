@@ -1,0 +1,61 @@
+﻿@using System.Data.Objects.SqlClient;  
+@using SoftrockDocsStagingModel;
+@{
+    //*********arguements*******************************
+    var theProjectId = Request["projectId"].AsInt(); 
+    var projectFolder = Request["projectFolder"];
+    var bandId = Request["bandId"].AsInt();
+    //**************************************************
+
+    Page.Title = "Select a Band";
+    var db = new SoftrockDocsStagingEntities();
+    //generate list of Bands for this Project (using distinct BOM bandIds)
+    var bandsThisProject = (from band in db.Bands
+                            join bom in db.BOMs
+                            on band.bandId equals bom.bandId
+                            where bom.projectId ==theProjectId
+                            && band.bandName.ToLower() != "all"
+                            orderby band.sequence, band.bandName
+                            select band).Distinct();
+
+    //bail out if only band is "all"
+    if(bandsThisProject.Count()==1)
+    {
+        if (bandsThisProject.SingleOrDefault().bandName.ToLower()=="all")
+        {
+            Response.Redirect(Href("~/" + projectFolder+"/index"));
+        }
+    }
+                                                    
+    IEnumerable<SelectListItem> ddlBands =
+        from band in bandsThisProject
+        select new SelectListItem
+        {
+            Value = SqlFunctions.StringConvert((double?)band.bandId).Trim(),
+            Text = band.bandName + " Kit"
+        };
+    
+    if(IsPost)
+    {
+        //Change bandId session variable to the submitted selection
+        if (!String.IsNullOrEmpty(Request["bandId"]))
+        {
+            bandId=Request.Form["bandId"].AsInt();
+            Session["bandId"] = bandId;
+        }
+        Response.Redirect(Href("~/" + projectFolder + "/index?changeBands=no"));
+    }
+ 
+}
+<form method="post" action="">
+    @MyHelpers.renderDropdownList(
+        "bandId",
+        ddlBands,
+        bandId,
+        "--Select a Band--",
+        "Currently Selected Kit Option:",
+        false)
+    <input type="hidden" name="projectFolder" value="@projectFolder" />
+    <input type="hidden" name="theProjectId" value="@theProjectId" />
+    <input type="submit" value="Accept Change (if any)" />
+</form>

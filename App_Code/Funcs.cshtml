@@ -1,0 +1,24 @@
+﻿@using SoftrockDocsStagingModel; 
+@functions {
+
+
+public static string nameSquasher(string theName)
+{
+    return theName.Replace("_","").ToLower();
+}
+public static int allBands()
+{
+    return 21; //id of the "all" entry in the Bands table
+}
+
+public static float voltageDividerOut(float vIn, float r1, float r2)
+{
+    return vIn * (r2 / (r2 + r1));
+}
+public static float voltageDividerIn(float vOut, float r1, float r2)
+{
+    return vOut / (r2 / (r2 + r1));
+}
+
+
+}

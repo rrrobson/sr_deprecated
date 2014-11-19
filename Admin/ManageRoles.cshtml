@@ -1,0 +1,197 @@
+﻿@{
+    Layout = "~/Shared/_SiteLayout.cshtml";
+    Page.Title = "Admin - Manage Roles";
+    //Need to ensure that at least ONE admin is left standing
+    
+}
+@if ( Roles.IsUserInRole("admin")) { 
+    <span> Welcome <b>@WebSecurity.CurrentUserName</b>! </span> 
+} 
+else { 
+     Response.Redirect(Href("~/AdminError")); 
+}
+@{
+    if(IsPost)
+    {
+        // Create new role
+        if(!Request["btnCreate"].IsEmpty()){
+            var roleName=Request["textRoleName"];
+            if(!Roles.RoleExists(roleName) && !roleName.IsEmpty())
+                {
+                    Roles.CreateRole(roleName);
+                    }
+        } // if(buttonCreateRole)
+
+
+        // Delete role (only if NO USERS in the role
+        if(!Request["btnDelete"].IsEmpty())
+        {
+            var roleName=Request["textRoleName"];
+            if(Roles.GetUsersInRole(roleName).Length == 0 &&     !roleName.IsEmpty())  {
+                // true means throw if any users are in this role
+                Roles.DeleteRole(roleName, true);
+                }
+        } // if(buttonDeleteRole)
+        
+        string[] userNames = new string[1];
+        string[] roleNames = new string[1];
+        // ...  
+        // Add user to role
+        if(!Request["btnAddUserToRole"].IsEmpty()){
+            userNames[0] = Request["selectUserName"];
+            roleNames[0] = Request["selectRoleName"];
+            if(!Roles.IsUserInRole(userNames[0], roleNames[0])){
+                Roles.AddUsersToRoles(userNames, roleNames);
+                }
+        } // if(buttonAddUserToRole)
+        
+        
+         // Delete user from role; for admin, if only one admin left - do not delete
+        if(!Request["btnDeleteUserFromRole"].IsEmpty()){
+            userNames[0] = Request["selectUserName"];
+            roleNames[0] = Request["selectRoleName"];
+            //Current user cannot remove self from admin role
+            if(userNames[0]==WebSecurity.CurrentUserName && roleNames[0] == "admin")
+            {
+                <p class="error">You are not allowed to remove yourself from the admin role!</p>
+            }
+            if(Roles.IsUserInRole(userNames[0], roleNames[0])  
+                && 
+                !(userNames[0]==WebSecurity.CurrentUserName && roleNames[0] == "admin"))   
+            {
+                Roles.RemoveUsersFromRoles(userNames,roleNames);
+            }
+        } // if(buttonDeleteUseFromRole)
+        
+
+    }
+}
+@{
+    @*var userDb = Database.Open("StarterSite");
+    var users=userDb.Query("SELECT * FROM UserProfile WHERE memberId IS NOT NULL ORDER BY email");
+    var mbrs = Database.Open("rafino_members");
+    var mbrQry = "SELECT ' '+[name l]+', '+[name f] + "
+        + " CASE WHEN [name m] IS NULL THEN '' ELSE ' '+[Name m] END AS FullName "
+        + "FROM rafino_member WHERE id=@0";
+    var mbrEmailQry = "SELECT ' '+[name l]+', '+[name f] + "
+        + " CASE WHEN [name m] IS NULL THEN '' ELSE ' '+[Name m] END AS FullName "
+        + "FROM rafino_member WHERE [e-mail]=@0";
+    var fullName = mbrs.QueryValue(mbrQry, -1);
+    long mbrId = -1;
+    *@
+}
+@{
+    var db = Database.Open("rafino_members");
+    var sdb = Database.Open("startersite");
+    //get 2 datasets from different dbs
+    var mbrs = db.Query("SELECT [name l] + ', ' + [name f] + "
+        + " CASE WHEN [name m] IS NULL THEN '' ELSE ' '+ [Name m] END "
+        + " + ' (' + [no address] + ')' AS fullName, "
+        + " [e-mail] as email, id as mbrId "
+        + " FROM rafino_member WHERE [e-mail] IS NOT NULL "
+        + " AND [no address] IN ('M','S', 'R') "
+        + " ORDER BY [name l], [name f]");
+    var usrs = sdb.Query("SELECT userId, email, memberId FROM UserProfile ORDER BY email");
+    var roleUsers = sdb.Query("SELECT r.RoleId as roleId, r.RoleName as roleName"
+        + ", u.Email as email, u.UserId as userId, u.memberId as memberId"
+        + " FROM  webpages_Roles r "
+        + " LEFT OUTER JOIN webpages_UsersInRoles ur "
+        + " ON r.RoleId = ur.RoleId "
+        + " LEFT OUTER JOIN UserProfile u "
+        + " ON ur.UserId = u.UserId "
+        + " ORDER BY r.RoleName, u.Email");
+
+        
+        
+        
+    var users = from u in usrs
+             join m in mbrs on u.email equals m.email
+             orderby m.fullName
+             //where m.fullName.ToUpper().StartsWith(startsWith.ToUpper())
+             select new
+             {
+                 member = m.fullName,
+                 email = m.email,
+                 mbrid = m.mbrid,
+                 userid = u.userid,
+                 usrmbr = u.memberid
+             };
+    var usersInRole = 
+        from u in usrs
+                join m in mbrs on u.email equals m.email
+                join ur in roleUsers on u.email equals ur.email
+                orderby ur.roleName, ((m.fullName==null) ? ur.roleName : m.fullName)
+                //where m.fullName.ToUpper().StartsWith(startsWith.ToUpper())
+                select new
+                {
+                    roleName=ur.roleName,
+                    member = m.fullName,
+                    email = m.email,
+                    mbrid = m.mbrid,
+                    userid = u.userid,
+                    usrmbr = u.memberid
+                };
+}
+
+}
+<div >
+<form method="post" action="" style="border-width:medium; border-style:ridge;">
+    RoleName: <input type="text" name="textRoleName" />
+    <input type="submit" value="Create Role"  name="btnCreate" class="submit"  style="width:7em;" />
+    <input type="submit" value="Delete Role"  name="btnDelete" class="submit" style="width:7em;" /><br/><br/>
+    <hr />
+    <label for="selectUserName">Users:</label>
+    <select name="selectUserName">
+        <option value="--- Select a User ---" >--- Select a User ---</option>
+        @foreach(var row in users) 
+        {
+            <option value="@row.email">@row.member</option>
+        }
+    </select>
+    <br />
+    <label for="selectRoleName">Roles:</label>
+    <select name="selectRoleName">
+        <option value="--- Select a Role ---" >--- Select a Role ---</option>
+        @foreach(var role in Roles.GetAllRoles())  
+        {
+            <option value="@role">@role</option>
+        }
+    </select>
+    <br />
+    <input type="submit" style="width:10em;" value="Add User to Role" name="btnAddUserToRole"/>
+    <input type="submit"  style="width:12em;" value="Delete User From Role" name="btnDeleteUserFromRole"/>
+</form>
+
+
+        
+    
+    
+
+<h2>Here are the Roles and the Users Assigned Into Them</h2>
+
+    <div style="border-style:ridge; border-color:Silver">
+        <ul>  
+            @{
+                var currentRoleName="";
+             }
+            @{
+                var sortedRoles = from r in Roles.GetAllRoles() orderby r select r;
+            }
+            @foreach (var role in sortedRoles   )
+            {
+                currentRoleName = role;
+                @:<li><strong>Role: @currentRoleName</strong> <ul>
+                    foreach (var ur in usersInRole)
+                    {
+                        if (currentRoleName == ur.roleName)
+                        {
+                            @: -- @ur.member (@ur.email)<br />
+                        }
+            
+                    }
+                    @:</ul></li>
+            }
+        </ul>
+    </div>        
+</div>
+

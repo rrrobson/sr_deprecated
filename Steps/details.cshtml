@@ -1,0 +1,49 @@
+﻿@using SoftrockDocsStagingModel;
+@using System.Data.Objects.SqlClient;
+@{
+    //Add Step
+    var thestepId = Request["StepId"].AsInt();
+    
+        
+        
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var theStep = db.Steps
+        .Where(s => s.StepId == thestepId)
+        .SingleOrDefault();
+
+    if (theStep == null)
+    {
+        Response.Redirect(Href("~/Projects"));
+    }
+    
+    Page.Title = Html.Raw("Details for "+theStep.StepName+"<br />"
+        +"["+theStep.Stage.StageName +" Stage]");
+
+
+    
+}
+<table>
+<tr>
+    <td>ID</td><td>@theStep.StepId</td>
+</tr>
+<tr>
+    <td>Stage</td><td>@theStep.Stage.StageName</td>
+</tr>
+<tr>
+    <td>Step Name</td><td>@theStep.StepName</td>
+</tr>
+<tr>
+    <td>Bottom?</td><td>@theStep.bottom</td>
+</tr>
+<tr>
+    <td>Sequence in Stage</td><td>@theStep.sequence</td>
+</tr>
+<tr>
+    <td>Image filename</td><td>@theStep.photoLink</td>
+</tr>
+</table>
+Description:<br />
+@Html.Raw(theStep.description)
+<br />
+<a href="@Href("~/Steps/index?stageId="+theStep.Stageid)">Return to Index</a>

@@ -1,0 +1,92 @@
+﻿@{
+    //requires three non-null elements passed in: id, fullname, email
+    if ( Roles.IsUserInRole("admin")) { 
+        <span> Welcome <b>@WebSecurity.CurrentUserName</b>! </span> 
+    } 
+    else { 
+        Response.Redirect(@Href("~/AdminError")); 
+    }   
+
+    Layout = "~/Shared/_SiteLayout.cshtml";
+    
+    //http://localhost:35630/Admin/AddUser?email=rrrobson@gmail.com&id=544&fullName=ROBSON, RICHARD R.
+    var fullName=Request["fullName"];
+    var id=Request["id"];
+    var email=Request["email"];
+
+    //****************************DEBUG***********************************************
+    //id="5";
+    //fullName="Carolyn Adams";
+    //email="cadamstext@testing.123";
+    //********************************************************************************
+    
+    
+    Page.Title = "Create User Login Account for "+ fullName;
+    
+    // Validation
+    var isValid = true;
+    var accountCreationErrorMessage = "";
+    
+    // Validate the user's email address
+    if (String.IsNullOrEmpty(email)) {
+        accountCreationErrorMessage = "You must specify an email address.  ";
+        isValid = false;
+    }
+    // Validate the fullName
+    if (String.IsNullOrEmpty(fullName)) {
+        accountCreationErrorMessage += "FullName is required.  ";
+        isValid = false;
+    }
+    // Validate the fullName
+    if (String.IsNullOrEmpty(id)) {
+        accountCreationErrorMessage += "Member row id is required.  ";
+        isValid = false;
+    }
+    
+    if (isValid) 
+    { 
+        // Insert a new user into the database
+        var db = Database.Open("StarterSite");
+    
+        // Check if user already exists
+        var user = db.QuerySingle("SELECT Email FROM UserProfile WHERE LOWER(Email) = LOWER(@0)", email);
+        if (user == null) {
+            // Insert email into the profile table
+            // Adds rafino memberid to Profile (newly added column)
+            db.Execute("INSERT INTO UserProfile (Email, memberid) VALUES (@0, @1)", email, id);
+    
+            // Create and associate a new entry in the membership database.
+            // If successful, continue processing the request
+            try {
+                var requireEmailConfirmation=false;
+                //default password is email address
+                var password=email;
+                var token = WebSecurity.CreateAccount(email, password, requireEmailConfirmation);
+                accountCreationErrorMessage=fullName + " login account successfully created, using " + email;
+            } catch (System.Web.Security.MembershipCreateUserException e) {
+                isValid = false;
+                accountCreationErrorMessage = e.ToString();
+            }
+        } else {
+            // User already exists
+            isValid = false;
+            accountCreationErrorMessage = "Cannot create account.  Email address ("+ email + ") is already in use as a login id.";
+        }
+    }//end if valid
+var returnToken="added";
+    }    
+
+
+
+
+
+@*Display completion message*@
+<p>@accountCreationErrorMessage</p>
+
+@* allow user to see feedback and then return*@
+<form  action="@Href("~/Admin/ManageUsers")")>
+    @if(!isValid){returnToken="failed";}
+    <input type="hidden" value="@returnToken" />
+    <input type="submit" value="Return to User Management"/>
+</form>
+

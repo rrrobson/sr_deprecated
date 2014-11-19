@@ -1,0 +1,136 @@
+﻿@{
+    // Must be Admin to be here
+    if ( Roles.IsUserInRole("admin")) { 
+        <span> Welcome <b>@WebSecurity.CurrentUserName</b>! </span> 
+    } 
+    else { 
+        Response.Redirect(@Href("~/AdminError")); 
+    }   
+    Layout = "~/Shared/_SiteLayout.cshtml";
+    Page.Title = "Change Security User's Email";
+    var requestInput=true;
+    
+    // passed in data
+    var fullName=Request["fullName"];
+    var id=Request["id"];
+    var email=Request["email"];
+    @: <br />(This screen changes the email for @fullName in both the member and the security databases)
+    
+    //Form Data
+    var newEmail="";
+    var newEmailCheck="";
+    
+    // need both member and profile dbs
+try{
+    var profiles=Database.Open("StarterSite");
+    var db=      Database.Open("rafino_members");
+    var qryValid="SELECT count(*) FROM rafino_member WHERE [e-mail] = @0";
+    var qryDupInProfile="SELECT count(*) FROM UserProfile WHERE Email = @0";
+    
+    var updProfile="UPDATE UserProfile SET email=@0, memberid=@1 WHERE email=@2";
+    var updMember="UPDATE rafino_member SET [e-mail]=@0 WHERE [id]=@1";
+    var delMbrShp="DELETE FROM WebPages_Membership WHERE userId=@0";
+    
+    // on form submission
+    if (IsPost){
+        // validate new email
+        newEmail=Request["newEmail"];
+        newEmailCheck=Request["newEmailCheck"];
+        if (String.IsNullOrEmpty(newEmail)){
+            ModelState.AddError("newEmail", "New Email is required");
+        }
+        if (String.IsNullOrEmpty(email)){
+            // should not happen
+            ModelState.AddError("email", "Current Email is required");
+        }
+        if (String.IsNullOrEmpty(id)){
+            ModelState.AddError("id", "member id is required");
+        }
+        if (!(newEmail==newEmailCheck)){
+            ModelState.AddError("newEmailCheck", "The new email and reentered email addresses must be the same");
+        }
+        // not same as current email
+        if (newEmail==email){
+            ModelState.AddError("newEmail", "new email cannot be same as current email");
+        }
+        // not used by some other member (id not = this member's id)
+        if (ModelState.IsValid){
+            var count=db.QueryValue(qryValid,@newEmail);
+            if (count>0){
+                ModelState.AddError("newEmail", @newEmail+ " is already used by another member");
+            }
+            // not in the security profile table
+            var dups=profiles.QueryValue(qryDupInProfile, newEmail);
+            if (dups>0){
+                ModelState.AddError("newEmail", @newEmail+ " is already in the security profile table");            
+            }
+        } // valid
+        // if no errors, update both tables
+        if (ModelState.IsValid){
+            @:updating both databases for (@id)-@fullName-@email
+            try{
+                var deletedMembership=0;
+                var updatedProfiles=0;
+                var updatedMembers=0;
+                var userId=WebSecurity.GetUserId(@email);
+                updatedMembers=db.Execute(updMember,@newEmail, @id);
+                updatedProfiles=profiles.Execute(updProfile,@newEmail, @id, @email);
+                // create new membership ********* have to check we got a good userId*********************  
+                if(updatedProfiles>0){
+                    deletedMembership=profiles.Execute(delMbrShp,@userId); 
+                    WebSecurity.CreateAccount(newEmail, newEmail); //email and password are same
+                }
+                @deletedMembership @updatedProfiles @updatedMembers
+                if (deletedMembership==1 && updatedProfiles==1 && updatedMembers==1){
+                    <p> @fullName email has been successfully changed from @email to @newEmail</p>
+                    requestInput=false;
+                }
+
+            }
+            catch (Exception updError){@updError}
+            
+        }
+        @Html.ValidationSummary("Errors with your submission:") 
+      } // is post
+}//try
+catch (Exception e){
+    @: Database error: @e
+}
+
+}
+
+
+@*
+    // on valid
+        // try catch
+            // update profile table
+            // reset password to new email
+            // update membership
+            // update rafino_member table
+    // if still valid    
+        // tell user all worked
+        // (send email to member?)
+        // return to ManageUsers
+    // if invalid
+        // tell user the reason and give chance to redo
+        // (may need to undo possible screwups in dual db transaction)
+*@
+<!-- ---------------- html ------------------------------------ -->
+<!-- Display Form (post) -->
+@{
+    if(requestInput){
+        <form method="post" action="" >
+            <table>
+            <tr><td>Current Email:</td><td>@email</td></tr>
+            <tr><td>New Email:</td><td><input type="text" name="newEmail" value="@newEmail"/></td></tr>
+            <tr><td>Re-Enter New Email:</td><td><input type="text" name="newEmailCheck" value="@newEmailCheck"/></td></tr>
+            <tr><td></td><td><input type="submit" name="postNewEmail" value="UPDATE @fullName's EMail"/></td></tr>
+            </table>
+        </form>
+    }
+    else{
+        <form method="get" action="@Href("~/Admin/ManageUsers")">
+            <input type="submit" value= "Return to Managing Users" />
+        </form>
+    }
+}

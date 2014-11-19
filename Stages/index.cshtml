@@ -1,0 +1,45 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    var theProjectId = Request["projectId"].AsInt();
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var theProject = db.Projects
+        .Where(p=> p.projectId == theProjectId)
+        .SingleOrDefault();
+    Page.Title = "Index of Stages for " + theProject.projectName;
+    
+    
+}
+
+
+
+<div>
+<table>
+<tr>
+<th>id</th><th>StageName</th><th>Steps</th><th>BOMS</th><th>Action</th>
+</tr>
+@foreach (var s in db.Stages
+    .Where(s=>s.Project.projectId==theProjectId)
+    .OrderBy(s => s.buildSequence))
+{
+    <tr>
+        <td>@s.StageId</td>
+        <td>@s.StageName</td>
+        <td>
+        <a href="@Href("~/Steps/index?StageId="+s.StageId)">
+        @s.Steps.Count
+        </a></td>
+        <td>
+        <a href="@Href("~/Boms/index?StageId="+s.StageId)">
+        @s.BOMs.Count
+        </a></td>
+        <td>
+            <a href="@Href("~/Stages/details?StageId="+s.StageId)">Details</a> 
+            <a href="@Href("~/Stages/edit?StageId=" + s.StageId)">Edit</a> 
+            <a href="@Href("~/Stages/delete?StageId=" + s.StageId)">Delete</a> 
+        </td>
+    </tr>
+}
+</table>  
+<a href="@Href("~/Stages/add?projectId="+theProjectId)">Add A New Stage"</a>  
+</div>

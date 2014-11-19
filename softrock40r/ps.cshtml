@@ -1,0 +1,178 @@
+﻿@using SoftrockDocsStagingModel;
+@{  
+    //*********driver variables***************
+    var stageAbbreviation = "ps";
+    var projectFolder = "softrock40r";
+    //**************************************************
+    
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null) 
+        { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId=(int)Session["bandId"];
+    Page.bandName = Session["bandName"];
+
+
+    var allBands = Funcs.allBands();
+    var db = new SoftrockDocsStagingEntities();
+    //find the stage using projectId and stageAbbreviation
+    var thisStage = db.Stages
+        .Where(s => s.projectId == theProjectId && s.StageAbbreviation == stageAbbreviation)
+        .SingleOrDefault()
+    ;
+
+
+    Page.Title = thisStage.Project.projectName + ":  " + thisStage.StageName;
+
+    var bomLines = from b in db.BOMs
+                    where b.projectId == theProjectId
+                    && (b.bandId==theBandId || b.bandId==allBands) 
+                    && b.Stage.StageAbbreviation == thisStage.StageAbbreviation
+                    orderby b.bottom_or_top
+                            , b.Stage.buildSequence
+                            , b.stepSeq
+                    select b;
+    }
+
+@*Intro, Schematics, and Layouts*@
+<h2>Introduction</h2>
+<h3>General Info About the Stage</h3>
+<p>This first stage is straight-forward.  The RX receives its power
+from the USB 5V power bus (pin 1 of the USB plug), with respect to
+the USB ground, pin 4.  We install the plug, the conditioning circuitry,
+and all of the bypass capacitors along the 5V power rail for the RX. </p>
+<p>The tricky part of this stage is soldering Q1 and Q2 
+(even though Q2 is part of the next (LO) stage, it is a good idea
+to install it at this point, due to the close proximity of the two transistors
+and the avoidance of obstacles in further stages).  
+These transistors are very tiny and it 
+is easy to introduce solder bridges on the closely spaced contacts.</p>
+<p class="gotcha">Note:  this design does not have any short protection or 
+current limiting on the input 5Vdc line from the PC's USB power bus.
+This suggests that you ALWAYS check that line before powering up to be sure 
+you have not introduced a short.</p>
+<h3>Theory of Operation</h3>
+<p>This is straight-forward.  The active components in the radio require 
+a clean, ripple-free nominally
+5 Vdc.  The 5V from the USB power bus is input to the condioning circuit 
+(Q1) in order to drastically reduce the ripple from the PC's USB power supply.
+The resultant Vcc voltage is nominally 4.3 Vdc (due to the 0.7 V drop across Q1's 
+junction) with negligible ripple, perfectly adequate to 
+meet the power requirements of the RX circuit.</p>
+<a name="schematic"></a>
+@MyHelpers.renderStageSchematic(thisStage.StageAbbreviation, projectFolder)
+<h2>Board Layouts</h2>
+<a name="topsidelayout"></a>
+@MyHelpers.renderBoardTopLayout(thisStage.StageAbbreviation, projectFolder)
+<a name="undersidelayout"></a>
+@MyHelpers.renderBoardBottomLayout(thisStage.StageAbbreviation, projectFolder)    
+
+
+@********************** Stage BOM *******************************@
+<a name="bom"></a>
+@MyHelpers.renderStageBom(theProjectId, thisStage.StageAbbreviation,theBandId)
+
+
+<h2>Detailed Build Steps</h2>
+<p>The critical task here is to be sure to install Q1 and Q2 
+first and carefully inspect the solder joints.
+Once Q1 and Q2 are installed, the remaining 1206 parts (bottom and topside) can be installed.
+The components for each step are listed in the sequence of their installation.</p>
+@foreach (var s in thisStage.Steps)
+{
+    <a name="@Funcs.nameSquasher(s.StepName)"></a>
+    <h3>@s.StepName</h3>
+    if (!String.IsNullOrEmpty(s.description))
+    {
+        @Html.Raw(s.description)
+    }
+
+    <table>
+<tr><th>Check</th><th>Designation</th>
+<th>Component</th>
+<th>top/Bottom</th><th>Marking</th><th>Image</th></tr>
+@foreach (var b in bomLines.Where(b => b.stepId == s.StepId))
+{
+    <tr @if(b.Component.esd){<text> style="color:Red;"</text>}>
+    <td>[&nbsp;&nbsp;]</td>
+    <td>@b.designation</td>
+    <td>@b.Component.component1</td>
+    <td>@b.bottom_or_top</td>
+    <td>@b.Component.marking
+        @if(b.Component.esd){<text> <b>ESD!!!</b></text>}
+    </td>
+    <td>
+    @if (b.Component.photoLink != null)
+    {<text><img src="@Href("~/images/" + @b.Component.photoLink)" alt="@b.Component.component1" /></text>}
+    </td>
+    </tr>
+}
+</table>
+}
+
+<a name="completedphotos"></a>
+<h2>Completed Photos</h2>
+@MyHelpers.renderCompletedTop(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderCompletedBottom(thisStage.StageAbbreviation, projectFolder)
+
+<a name="testing"></a>
+<h2>Testing</h2>
+<h3>Overview</h3>
+<p>Before doing any testing, use a bright light and good magnification
+to verify correct soldering.  Soldering problems are the greatest 
+cause of test failures.  Pay particular attention to Q1 and Q2.  </p>
+
+@MyHelpers.renderSR40R_railTest()
+
+<h3 style="clear:left;" class="testit">Voltage Tests</h3>
+@MyHelpers.renderProjectImage(projectFolder, "ps_voltage_test.gif", "voltage test points")
+
+<p>Connect the USB Plug to a USB (power) source.  
+Measure the voltage (WRT ground) at point A.  
+If the voltage is as expected, 
+measure the voltage (WRT ground) at point B.
+</p>
+<p>Note:  The unloaded output from the power supply is likely to be a little higher 
+than the loaded output (as the build progresses into the later stages).  This is normal.
+Also, please note that the 5.0Vdc for the USB power source is 
+<strong>nominal</strong>.  This can vary somewhat from PC to PC or hub to hub.</p>
+
+<h5>Potential (no pun intended) issues:</h5>
+<ul><li>Point A is not 5V.   Check the J1 installation.  Be sure the
+USB source is actually powered up.</li>
+<li>Point B is not ~4.3 V.  Check installation of Q1, R1, and C3</li></ul>
+
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "\"A\" on topside", "Vdc", "5", "5.04")
+@MyHelpers.renderTestRow("2", "\"B\" on topside", "Vdc", "4.3", "4.24")
+</table>
+@*******************************************************@
+
+<h3>Testing The Rest of the Rail</h3>
+@MyHelpers.renderProjectImage(projectFolder, "ps_bypass_voltage_tests.gif", "by-pass capsvoltage test points")
+
+<p>Connect the USB Plug to a USB (power) source.  
+Measure the voltage (WRT ground) at topside points A and B and
+underside points C and D. Measure by placing the "hot" 
+probe on the capacitor itself (tests adequate solder job, no short) 
+</p>
+<h5>Potential issues:</h5>
+<ul><li>Testpoint is not 5V.   Check the capacitor's soldering.  Be sure the
+USB source is actually powered up.</li>
+</ul>
+
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "\"A\" on topside", "Vdc", "4.3", "4.24")
+@MyHelpers.renderTestRow("2", "\"B\" on topside", "Vdc", "4.3", "4.24")
+@MyHelpers.renderTestRow("3", "\"D\" on underside", "Vdc", "4.3", "4.24")
+</table>
+<h2>Next - 
+<a href="@Href("~/"+projectFolder+"/lo")">
+Local Oscillator Stage</a>
+</h2>

@@ -1,0 +1,154 @@
+﻿@{
+    //need admin role
+    if (!Roles.IsUserInRole("admin"))
+    {
+        Response.Redirect(Href("~/autherror"));
+    }
+    var securityOrMbr = Request["securityOrMbr"];
+    var searchArg = Request["searchArg"];
+
+    }
+<style type="text/css">
+input[type="radio"]
+{
+   width:1em;   
+}
+</style>
+<form method="post" action="">
+<label for="securityOrMbr">Search in Security DB or Member DB</label><br />
+<input type="radio" name="securityOrMbr" value="security"
+    @if (securityOrMbr == "security")
+    {<text> checked="checked" </text>}/>
+    Security DB (email address)<br />
+<input type="radio" name="securityOrMbr" value="member" 
+    @if (securityOrMbr == "member" || securityOrMbr.IsEmpty())
+    {<text> checked="checked" </text>}/>
+    Members DB (last name)<br />
+<input type="radio" name="securityOrMbr" value="memberemail" 
+    @if (securityOrMbr == "memberemail")
+    {<text> checked="checked" </text>}/>
+    Members DB (email)<br />
+<label for="searchArg">Enter first few characters of last name or email:</label>
+<input type="text" name="searchArg" value="@searchArg" />
+<input type="submit" name="submit" value="Search for Logins" />
+</form>
+
+@{
+    if (IsPost)
+    {
+        securityOrMbr = Request["securityOrMbr"];
+        // takes 3 values: security, member, memberemail
+
+        var db = Database.Open("rafino_members");
+        var sdb = Database.Open("startersite");
+        //get 2 datasets from different dbs
+        var mbrs = db.Query("SELECT [name l] + ', ' + [name f] + "
+            + " CASE WHEN [name m] IS NULL THEN '' ELSE ' '+ [Name m] END "
+            + " + ' (' + [no address] + ')' AS fullName, "
+            + " [e-mail] as email, id as mbrId "
+            + " FROM rafino_member WHERE [e-mail] IS NOT NULL "
+            + " AND [no address] IN ('M','S', 'F', 'FS', 'R','G', 'I', '1') "
+            + " ORDER BY [name l], [name f]");
+        var usrs = sdb.Query("SELECT u.userId, u.email, u.memberId "
+            + ", m.createdate, m.passwordChangedDate"
+            + ", m.IsConfirmed as isConfirmed, m.lastPasswordFailureDate as pwdFailDate "
+            + ", m.PasswordFailuresSinceLastSuccess AS failures "
+            + " FROM UserProfile u "
+            + " JOIN webpages_membership m "
+            + " ON m.userId=u.userId "
+            + " ORDER BY email");
+
+        var q1 = from u in usrs
+                 join m in mbrs on u.email equals m.email
+                 orderby m.fullName
+                 where m.fullName.ToUpper().StartsWith(searchArg.ToUpper())
+                 select new
+                 {
+                     member = m.fullName,
+                     email = m.email,
+                     mbrid = m.mbrid,
+                     userid = u.userid,
+                     usrmbr = u.memberid,
+                     createdDate = u.createDate,
+                     isConfirmed = u.isConfirmed,
+                     passwordChangedDate = u.passwordChangedDate,
+                     failures=u.failures
+                 };
+
+        //need to make this one an outerjoin
+        if (securityOrMbr == "security")
+        {
+            q1 = from u in usrs
+                 join m in mbrs on u.email equals m.email into outer
+                 from m in outer.DefaultIfEmpty()
+                 orderby u.email
+                 where u.email.ToLower().StartsWith(searchArg.ToLower())
+                 select new
+                 {
+                     member = ((m == null) ? "anonymous" : m.fullName),
+                     email = u.email,
+                     mbrid = ((m == null) ? -1 : m.mbrid),
+                     userid = u.userid,
+                     usrmbr = u.memberid,
+                     createdDate = u.createDate,
+                     isConfirmed = u.IsConfirmed,
+                     passwordChangedDate = u.passwordChangedDate,
+                     failures = u.failures
+                 };
+        }
+        if (securityOrMbr == "memberemail")
+        {
+            q1 = from u in usrs
+                 join m in mbrs on u.email equals m.email
+                 orderby m.email
+                 where m.email.ToLower().StartsWith(searchArg.ToLower())
+                 select new
+                 {
+                     member = m.fullName,
+                     email = m.email,
+                     mbrid = m.mbrid,
+                     userid = u.userid,
+                     usrmbr = u.memberid,
+                     createdDate = u.createDate,
+                     isConfirmed = u.IsConfirmed,
+                     passwordChangedDate = u.passwordChangedDate,
+                     failures = u.failures
+                 };
+        }
+        var pwdClass = "passwordChanged";
+        var confClass = "unConfirmed";
+<table>
+            <tr><th>Email</th><th>Member</th><th>Created</th><th>PWD Changed</th><th>Fails</th></tr>
+            @foreach (var user in q1)
+            {
+                pwdClass = "passwordChanged";
+                if (user.passwordChangedDate.ToShortDateString() != user.createdDate.ToShortDateString())
+                {
+                    pwdClass = "";
+                }
+                if (user.isConfirmed) { confClass = ""; } else { confClass = "unconfirmed"; }
+                
+                <tr>
+                <td class="@confClass ">
+                    <a href="@Href("~/Admin/UserProfileEdit?userId="
+                    +user.userid
+                    +"&fullName="+user.member)">
+                        @user.email
+                    </a>
+                </td>
+                <td>
+                    @if (user.mbrid >= 1)
+                    {<a href="@Href("~/Crud_EditMember?mbrid=" + user.mbrid)">@user.member</a> }
+                    else
+                    {@user.member }
+                </td>
+                <td>@user.createdDate.ToString("s")</td>
+                <td class="@pwdClass">@user.passwordChangedDate.ToString("s")</td>
+                <td>@user.failures</td></tr>
+            }
+
+        </table> 
+          
+
+    }
+}

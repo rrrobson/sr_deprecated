@@ -1,0 +1,134 @@
+﻿@using SoftrockDocsStagingModel;
+@{  
+    //*********driver variables***************
+    var stageAbbreviation = "bpf";
+    var projectFolder = "softrock40r";
+    //**************************************************
+
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+    var bandName = Session["bandName"];
+    Page.BandName = bandName;
+    
+    var db = new SoftrockDocsStagingEntities();
+    //find the stage using projectId and stageAbbreviation
+    var thisStage = db.Stages
+        .Where(s => s.projectId == theProjectId && s.StageAbbreviation == stageAbbreviation)
+        .SingleOrDefault()
+    ;
+
+    
+    Page.Title = thisStage.Project.projectName + ":  " + thisStage.StageName;
+
+    var allBands = Funcs.allBands();
+    var bomLines = from b in db.BOMs
+                   where b.projectId == theProjectId
+                   && b.Stage.StageAbbreviation == thisStage.StageAbbreviation
+                   && (b.bandId == theBandId || b.bandId == allBands)
+                   orderby b.bottom_or_top
+                          , b.Stage.buildSequence
+                   select b;
+}
+
+@*Intro, Schematics, and Layouts*@
+<h2>Introduction</h2>
+<h3>General Info About the Stage</h3>
+<p>The challenge in this stage is to successfully wind and install the 
+two inductors, L1 and T1.  The most common sources of problems from
+this stage will be in the soldering of the inductors' leads.
+If the leads are not well cleaned with the insulation removed
+and then neatly tinned, cold joints could occur (often very
+difficult to detect and remedy).</p>
+<p>We have a nice set of 
+<a href="http://www.wb5rvz.com/sdr/common/Common_Component_Mounting.htm#toroid_coils">
+guidelines for winding and installing inductors.  
+</a>
+If you have little or no experience in this area, 
+these guidelines are a "must read". </p>
+<h3>Theory of Operation</h3>
+<p>This stage takes in RF from a 50 ohm antenna and filters
+the RF into a "window" (pass band) on the spectrum that "sees" signals
+in the @bandName band(s) and attenuates all other signals 
+significantly.</p>
+@MyHelpers.renderStageSchematic(thisStage.StageAbbreviation, projectFolder)
+<h2>Board Layouts</h2>
+@MyHelpers.renderBoardTopLayout(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderBoardBottomLayout(thisStage.StageAbbreviation, projectFolder)    
+@********************** Stage BOM *******************************@
+@MyHelpers.renderStageBom(theProjectId, thisStage.StageAbbreviation,theBandId)
+
+
+<h2>Detailed Build Steps</h2>
+@foreach (var s in thisStage.Steps.OrderBy(s=>s.sequence))
+{
+    <h3>@s.StepName</h3>
+    if (!String.IsNullOrEmpty(s.description))
+    {
+        @Html.Raw(s.description)
+    }
+
+<table>
+<tr><th>Check</th><th>Designation</th>
+<th>Component</th>
+<th>top/Bottom</th><th>Marking</th><th>Image</th>
+<th>Band</th></tr>
+@foreach (var b in bomLines.Where(b=>b.stepId==s.StepId).OrderBy(b=>b.stepSeq))
+{
+    @MyHelpers.renderStepBomLine(b)
+}
+</table>
+}
+
+
+@***********************Completed*****************************@
+<a name="completedphotos"></a>
+<h2>Completed Photos</h2>
+@MyHelpers.completedPhotosCaveat("20m")
+@MyHelpers.renderCompletedTop(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderCompletedBottom(thisStage.StageAbbreviation, projectFolder)
+
+@***********************Testing*****************************@
+<a name="testing"></a>
+<h2>Testing</h2>
+<h3>Overview</h3>
+<p>Before doing any testing, use a bright light and good magnification
+to verify correct soldering.  Soldering problems are the greatest 
+cause of test failures.  
+Pay particular attention to the leads of the inductors.  
+One of the most common causes of poor or non-performance on
+Softrocks is the soldering of the inductor leads.  If they
+are not carefully cleaned and tinned, the joints will appear to be soldered
+but will in fact be a cold solder joint.  Bye-bye sensitivity!</p>
+
+@MyHelpers.renderSR40R_railTest()
+
+
+<h3>Voltage Tests</h3>
+@MyHelpers.renderProjectImage(projectFolder,"bpf_voltage_test.gif", "bpf voltage test points")
+
+<p>R10 and R11 form a voltage divider to provide the bias to the 
+OpAmp stage.  The divider produces 50% of Vcc (approximately 2.15 Vdc)
+at the junction of R10 and R11.</p>
+<p>Connect the USB Plug to a USB (power) source.  
+Measure the voltages (WRT ground) at the testpoints indicated 
+in the above figure.</p>
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "A", "Vdc", "2.15", "2.11")
+</table>
+<h5>Potential issues:</h5>
+<ul>
+<li></li>
+<li></li>
+</ul>
+@*******************************************************@
+
+<h2>Next - 
+<a href="@Href("~/"+projectFolder+"/amp")">
+OpAmps Stage</a>
+</h2>

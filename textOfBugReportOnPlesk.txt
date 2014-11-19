@@ -1,0 +1,36 @@
+There is a serious bug/defect in the Plex Control panel for WB5RVZ.org (and likely any other domain with similar circumstances)
+
+Effect os Going into ASP Settings
+
+(1)  Connection Strings section BEFORE:
+  <connectionStrings>
+
+
+        <add name="SoftrockDocsStagingEntities" 
+        connectionString="metadata=res://*/App_Code.Model.csdl|res://*/App_Code.Model.ssdl|res://*/App_Code.Model.msl;provider=System.Data.SqlClient;provider connection string=&quot;data source=mssql1.dailyrazor.com;initial catalog=rrrobson_SoftrockDocsStaging;user id=rrrobson;password=softrock;multipleactiveresultsets=True;App=EntityFramework&quot;" 
+        providerName="System.Data.EntityClient" />
+
+
+  </connectionStrings>
+
+(2)  In PLEX Control Panel, go to the ASP.Net Settings and get screen titled "ASP.NET Configuration for Domain"
+
+(3)  Review the data on the screen and make NO CHANGES.  
+
+(4)  Click "OK"
+
+(5)  Connection Strings AFTER (notice the truncation of the SoftrockDocsStagingEntities connection string):
+  <connectionStrings>
+    <add name="SoftrockDocsStagingEntities" connectionString="metadata=res://*/App_Code.Model.csdl|res://*/App_Code.Model.ssdl|res://*/App_Code.Model.msl;provider=System.Data.SqlClient;provider connection string=" />
+  </connectionStrings>
+
+Conclusion:  
+(1)  DailyRazor.com has a bug in its control panel (Home/Domains/WB5RVZ.ORG/ASP.NET Configuration for Domain.  
+(2)  The bug appears to be due to an arbitrarily imposed  maximum length constraint of 150 bytes on the "Connection Parameters" input field in the "Connection String Manager" portion of the screen.
+(3)  The "Connection String Manager" attempts to default each "Connection Parameters" input field, using the values in the web.config file.  IF THE connection string is longer than 150 bytes, the "Connection String Manager" silently truncates the connection string.
+(4) If the user clicks on any button other than "Cancel", the "ASP.Net Settings" screen updates the web.config file with the truncated connection string.  
+(5) In the test case above, a valid 325 byte connection string was arbitratily and silently truncated to 150 bytes and the result was placed in the web.config file, disabling the website.THIS IS A SERIOUS BUG!
+
+This bug is likely to affect any other ASP.Net domain that uses the EntityFramework for its Data Access layer.  ASP.Net's Entity Framework requires a connection string that is considerably longer than typical "pure SQL Server" connection strings.
+
+

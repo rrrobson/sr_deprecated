@@ -1,0 +1,33 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    Layout = "~/_SiteLayout.cshtml";
+    Page.Title = "Index of Projects";
+    var db = new SoftrockDocsStagingEntities();
+
+    
+}
+<table>
+<tr>
+<th>id</th><th>ProjectName</th><th>Stages</th><th>BOMS</th><th>Action</th>
+</tr>
+@foreach (var p in db.Projects.OrderByDescending(p => p.projectId))
+{
+    <tr>
+        <td>@p.projectId</td>
+        <td>@p.projectName</td>
+        <td>
+        <a href="@Href("~/Stages/index?projectId="+p.projectId)">
+        @p.Stages.Count
+        </a></td>
+        <td>
+        <a href="@Href("~/Boms/index?projectId="+p.projectId)">
+        @p.BOMs.Count
+        </a></td>
+        <td>
+            <a href="@Href("~/Projects/details?projectId="+p.projectId)">Details</a> 
+            <a href="@Href("~/Projects/edit?projectId=" + p.projectId)">Edit</a> 
+            <a href="@Href("~/Projects/delete?projectId=" + p.projectId)">Delete</a> 
+        </td>
+    </tr>
+}
+</table>

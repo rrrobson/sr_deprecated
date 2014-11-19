@@ -1,0 +1,99 @@
+﻿@using System.Data.Objects.SqlClient;  
+@using SoftrockDocsStagingModel;
+@{
+    var changeBands = Request["changeBands"];
+    //*********driver variables***************
+    Page.Title = "Home - Softrock 40 R2 USB RX";
+    var theProjectId = 20;
+    var projectFolder = "softrock40r";
+    var stageAbbreviation = "index";
+    var bandId = (Session["bandId"]==null ? 5 : Session["bandId"]); //assume 20m (bandId of 5)
+    Session["bandId"]=bandId;
+    //**************************************************
+   
+    //sessionize the project
+    if (Session["projectId"] == null)
+    {
+        Session["projectId"] = theProjectId;
+    }
+    if (Session["projectFolder"] == null)
+    {
+        Session["projectFolder"] = projectFolder;
+    }
+
+    
+    
+    var imageSource = Href(projectFolder+"/images");
+    var db = new SoftrockDocsStagingEntities();
+    var bandName = "n/a";
+    if((int)bandId>0 )
+    {
+        bandName = (from b in db.Bands
+                       where b.bandId==(int)bandId
+                       select b)
+                       .SingleOrDefault()
+                       .bandName;
+    }
+    Session["bandName"] = bandName;
+    Page.bandName = Session["bandName"];
+    if (IsPost)
+    {
+        var actionUrl =Href(
+              "~/"
+            + projectFolder
+            + "/SelectBand?projectId=" + theProjectId
+            + "&bandid=" + bandId
+            + "&projectFolder=" + projectFolder);
+        var choice = Request.Form["choice"];
+        if (choice == "Yes")
+        {
+            //Response.Redirect("~/softrock40r/SelectBand?projectId="+theProjectId+"@bandId="+bandId+"&projectFolder="+projectFolder);
+            Response.Redirect(actionUrl);
+        }
+        else
+        {
+            Response.Redirect("#?changeBands=no");
+        }
+    }
+}
+@*Dont want form if band is all ok and we want to enable navigation*@
+@if (Request["changeBands"] == "yes")
+{
+    <form method="post" action="">
+        <label>Currently Selected Band Option is: @bandName</label>
+        <label>Change Bands?</label>
+        <input name="choice" type="submit" value="Yes" />
+        <input name="choice" type="submit" value="No" />
+    </form>
+}
+    <h2>Introduction</h2>
+    <h3>General Info</h3>
+    <p class="gotcha">The most difficult part of this build is making sure you
+    do not lose any of the SMT components.  The resistors and capacitors are 
+    very small and extremely lightweight.  They can be accidentally "launched"
+    by a shaky hand and a bad set of tweezers.  Invest in a good set of tweezers 
+    and a baking sheet with 0.5-1" walls around the edges.  If a chip ever lands 
+    in the carpet, you will never find it!</p>
+    <p>This kit is for the @bandName band</p>
+    <h3>Theory of Operaton</h3>
+    
+    <div style="width:950px;">
+        <h2>Schematic</h2>
+        @{
+            var schematicUrl=imageSource+"/index.gif";
+        }
+        <img src="@Href("~/softrock40r/images/index.gif")" alt="main schematic" />
+    </div>
+    
+    <h2>Board Layouts</h2>
+    <h3>Topside</h3>
+    <img src="@(Href("~/softrock40r/images/index_top.gif"))" alt="topside layout" />
+    <h3>Underside</h3>
+    <img src="@(Href("~/softrock40r/images/index_bottom.gif"))" alt="undersideside layout" />
+
+
+    <h2>Completed Images</h2>
+    <h3>Topside</h3>
+    <img src="@(Href("~/softrock40r/images/conn_completed_top.gif"))" alt="completed topside" />
+    <h3>Underside</h3>
+    <img src="@(Href("~/softrock40r/images/conn_completed_bottom.gif"))" alt="completed underside" />

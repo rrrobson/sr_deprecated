@@ -1,0 +1,98 @@
+﻿@{
+    Layout = "~/Shared/_SiteLayout.cshtml";
+    Page.Title ="Manage Users' LogIns";
+    if ( Roles.IsUserInRole("admin")) { 
+        <span> Welcome <b>@WebSecurity.CurrentUserName</b>! </span> 
+    } 
+    else { 
+        Response.Redirect(@Href("~/AdminError")); 
+    }   
+    var db=Database.Open("rafino_members");
+    DateTime created = DateTime.MinValue;
+    DateTime changed = DateTime.MinValue;
+    
+    
+
+    var qryEmail = "SELECT "
+        + " [id], "
+        + " [name L]+', '+[name F] + "
+        + " CASE WHEN [name M] IS NULL THEN '' ELSE ' '+[name M] END AS fullName, "
+        + " [e-mail] as email "
+        + " FROM rafino_member WHERE [name L] like @0  "
+        + " ORDER BY [name L], [name F] "
+    ;
+    
+}
+
+    
+@{
+    if (IsPost){
+        var dbSec = Database.Open("StarterSite");
+        var secQry = "SELECT count(*) FROM userProfile WHERE email=@0";
+        
+        <p>You may Create a login from the Member's onfile email address or 
+            you may change the email address or the password for login (and on the member's file)</p>
+            <p>This page only lists members who have an email in their record.</p>
+        <table>
+    @try{
+        var partialName=Request["searchArg"];
+        var members=db.Query(qryEmail, partialName+"%");
+        var parm="";
+        var hasLogin=true;
+        //Changed 7 Mar to eliminate the "No Email" records
+        foreach (var m in members){
+            if(!(String.IsNullOrEmpty(m.email))){
+                hasLogin = (dbSec.QueryValue(secQry, m.email) ==1);
+                parm="?email=" + m.email + "&id=" +m.id + "&fullName="+m.fullName;
+                <tr>
+                    @if(!hasLogin)
+                    {
+                        <td>
+                        <a href="@Href("~/Admin/AddUser"+ parm)"> 
+                        Create Login </a> &nbsp; &nbsp;&nbsp;
+                        </td><td></td><td></td>
+                    }
+                    else
+                    {
+                        <td></td>
+                        <td><a href="@Href("~/Admin/UpdateUser" + parm)"> Change Login </a>&nbsp; &nbsp; &nbsp;</td>
+                        <td><a href="@Href("~/Admin/ChangeUserPassword" + parm)"> Change Password </a>&nbsp; &nbsp; &nbsp;</td>
+                    }
+                    <td>@m.fullName</td><td> 
+                @*following should be legacy code*@    
+                @if (m.email == null)
+                {<text>NoEmail</text>
+                }
+                else
+                {@m.email}
+                    </td>
+                    @if(hasLogin)
+                    {
+                        created = @WebSecurity.GetCreateDate(m.email);
+                        changed = @WebSecurity.GetPasswordChangedDate(m.email);
+                        <td>Created: @created.ToLocalTime()</td>
+                        <td 
+                        @if(created==changed){<text>class="passwordChanged"</text>}>
+                            Password Last Changed: @changed.ToLocalTime()</td>
+                    }
+                    </tr>
+            }
+        }
+
+    }
+    catch (Exception e)
+    {@e}
+    
+    </table>
+    }
+}
+@*//member must enter a search argument*@
+<form method="post" action="" >
+    <label>
+        Please type in the first letter or first few <br/>letters of the
+        <strong><em>desired last name</em></strong>:
+        <br/>Then, click on the <strong><em>"Search"</em></strong> button 
+    </label>
+    <input id="searchfor" name="searchArg" type="text" />
+    <input  style="width:5em;"   type="submit" value="Search" />
+</form>

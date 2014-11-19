@@ -1,0 +1,118 @@
+﻿@using SoftrockDocsStagingModel;
+@{  
+    //*********driver variables***************
+    var stageAbbreviation = ""; //this stage's abbreviation
+    var projectFolder = ""; //folder name (no slashes)
+    //**************************************************
+
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+
+    var allBands = Funcs.allBands();
+
+    var db = new SoftrockDocsStagingEntities();
+    //find the stage using projectId and stageAbbreviation
+    var thisStage = db.Stages
+        .Where(s => s.projectId == theProjectId && s.StageAbbreviation == stageAbbreviation)
+        .SingleOrDefault()
+    ;
+
+    Page.bandName = Session["bandName"];
+    Page.Title = thisStage.Project.projectName + ":  " + thisStage.StageName;
+
+    var bomLines = from b in db.BOMs
+                   where b.projectId == theProjectId
+                   && b.Stage.StageAbbreviation == thisStage.StageAbbreviation
+                   && (b.bandId == theBandId || b.bandId == allBands)
+                   orderby b.bottom_or_top
+                          , b.Stage.buildSequence
+                   select b;
+}
+
+@************************Intro and Theory***********************@
+<h2>Introduction</h2>
+<h3>General Info About the Stage</h3>
+<h3>Theory of Operation</h3>
+
+@**************************Schematic*****************************@
+<a name="schematic"></a>
+@MyHelpers.renderStageSchematic(thisStage.StageAbbreviation, projectFolder)
+
+@**************************Layouts*******************************@
+<h2>Board Layouts</h2>
+<a name="topsidelayout"></a>
+@MyHelpers.renderBoardTopLayout(thisStage.StageAbbreviation, projectFolder)
+<a name="undersidelayout"></a>
+@MyHelpers.renderBoardBottomLayout(thisStage.StageAbbreviation, projectFolder)    
+
+@********************** Stage BOM *******************************@
+<a name="bom"></a>
+@MyHelpers.renderStageBom(
+        theProjectId, 
+        thisStage.StageAbbreviation, 
+        theBandId
+        )
+
+@**************************Steps*********************************@
+<h2>Detailed Build Steps</h2>
+@foreach (var s in thisStage.Steps)
+{
+    <a name="@Funcs.nameSquasher(s.StepName)"></a>
+    <h3>@s.StepName</h3>
+    if (!String.IsNullOrEmpty(s.description))
+    {
+        @Html.Raw(s.description)
+    }
+
+<table>
+<tr><th>Check</th><th>Designation</th>
+<th>Component</th>
+<th>top/Bottom</th><th>Marking</th><th>Image</th>
+<th>Band</th></tr>
+@foreach (var b in bomLines
+    .Where(b => b.stepId == s.StepId)
+    .OrderBy(b => b.stepSeq)
+    .ThenBy(b => b.designation)
+    )
+{
+    @MyHelpers.renderStepBomLine(b)
+}
+</table>
+}
+
+@**************************Completed*************************@
+<a name="completedphotos"></a>
+<h2>Completed Photos</h2>
+@MyHelpers.renderCompletedTop(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderCompletedBottom(thisStage.StageAbbreviation, projectFolder)
+
+@**************************Testing***************************@
+<a name="testing"></a>
+<h2>Testing</h2>
+<h3>Overview</h3>
+<p></p>
+<h3>Name of Test</h3>
+@MyHelpers.renderProjectImage(projectFolder, "<filename>", "<alt text>")
+
+<h4>Test Procedure</h4>
+<p>
+</p>
+<h4>Potential issues:</h4>
+    <ul>
+        <li></li>
+        <li></li>
+    </ul>
+
+<h4>Test Table</h4>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "\"A\" on   ", "unit", "nom", "authtbd")
+@MyHelpers.renderTestRow("2", "\"B\" on   ", "unit", "nom", "authtbd")
+</table>
+
+@**************************Next Stage*************************@
+<a href="@Href("~/"+projectFolder+"/")"><h2>Next Stage: </h2></a>

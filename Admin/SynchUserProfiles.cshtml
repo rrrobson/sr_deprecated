@@ -1,0 +1,117 @@
+﻿@{
+    @*
+    1.  Reads through all the user profiles and trys to match each up with a member (on email)
+    2.  If the email matches, the profile memberId is updated with the matching member id
+    3.  If no match, the profile memberId is set to -1
+    4.  Where there are two members with the same email, 
+        the member with the lowest userId is chosen as the matching memberId
+    5.  Display shows nomatches as having a memberId of -1
+    *@
+    DynamicRecord me = (DynamicRecord)Session[WebSecurity.CurrentUserName];
+    if(me!=null){<p>Welcome @me["fullName"]</p>}
+    //Changed to use Linq 6/16/2011
+    var dbSec = Database.Open("StarterSite");
+    var db = Database.Open("rafino_members");
+    var users = dbSec.Query("SELECT * FROM userProfile ORDER BY email");
+    var mbrs = db.Query("SELECT "
+        + "  id"
+        + ", [e-mail] as email"
+        + ", [no address] as statusCode "
+        + ", [name L] + ', ' + [name f] + CASE WHEN [name m] IS NULL THEN '' ELSE ' '+ [name m] END as fullName"
+        + " FROM rafino_member "
+        + " ORDER BY [e-mail]");
+    var accts = from u in users
+                join m in mbrs on u.email equals m.email into outer
+                from m in outer.DefaultIfEmpty()
+                orderby u.email
+                select new
+                {
+                    email = u.email
+                    ,
+                    userMbrId = u.memberId
+                    ,
+                    mbrId = (m == null) ? -1 : m.id
+                    ,
+                    fullName = (m == null) ? "anon" : m.fullName
+                    ,
+                    statusCode = (m == null) ? "" : m.statusCode
+                    ,
+                    userId = u.userId
+                };
+
+    var action = "matched";
+    var allUsers = users.Count();
+    var anons = 0;
+    var updates = 0;
+    var matches = 0;
+    foreach (var a in accts)
+    {
+        if (a.mbrId > 0 && (a.userMbrId == null || a.userMbrId == -1))
+        {
+            //they match on email but not ID
+            action = "updated";
+            updates += 1;
+            try
+            {
+                dbSec.Execute("UPDATE userProfile SET memberId=@0 WHERE userId=@1",
+                    a.mbrId, a.userId);
+            }
+            catch (Exception e)
+            {
+                            @: Error updating @a.email @e<br />
+                        }
+        }
+        else
+        {
+            if (a.mbrId == null)
+            {
+                action = "anon";
+                anons += 1;
+            }
+            else
+            {
+                action = "matched";
+                matches += 1;
+            }
+        }
+        if (action != "matched")
+        {
+                        <p>@action @a.email @a.userMbrId @a.mbrId @a.fullName @a.statusCode</p>
+        }
+
+    }
+        
+                <p>There were:</p>
+                <ul>
+                    <li>@matches Security Accounts that Matched a Member Record</li>
+                    <li>@anons Anonymous security accounts</li>
+                    <li>@updates Security Accounts that were updated to link Member Emails</li>
+                    <li>@allUsers total security accounts processed</li>
+                </ul>
+     
+    /*    var dbMbr = Database.Open("rafino_members");
+    var dbSec = Database.Open("StarterSite");
+    
+    var strQueryProfile="SELECT userId, email, memberId FROM UserProfile";
+    var updQuery = "UPDATE UserProfile SET memberId=@1 WHERE userId=@0";
+    //min(id) handles situation of non-unique emails
+    var strQueryMbr = "SELECT CASE WHEN Min(id) IS NULL THEN -1 ELSE Min(Id) END As Id FROM rafino_member where [e-mail]=@0";
+    var removeQuery = "UPDATE UserProfile SET memberId = -1 WHERE userId=@0";
+    
+    var matchingMbrId=-1;
+    foreach(var profile in dbSec.Query(strQueryProfile))
+    {
+        matchingMbrId=dbMbr.QueryValue(strQueryMbr,profile.email);
+        <text>email: @profile.email Member: @matchingMbrId</text>
+        if(matchingMbrId >0)
+        {
+            dbSec.Execute(updQuery, profile.userId,matchingMbrId);
+            <text> (updated)</text>
+        }
+        else
+        {
+            dbSec.Execute(removeQuery, profile.userId);
+        }
+        <br />
+    }*/
+}

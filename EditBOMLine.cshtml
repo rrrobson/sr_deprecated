@@ -1,0 +1,31 @@
+﻿@using SoftrockDocsStagingModel()
+@{
+    var theBomId=3000;
+    
+    var db = new SoftrockDocsStagingEntities();
+    var theBom=db.BOMs
+        .Where(b=>b.id==theBomId ).SingleOrDefault()
+        ;
+    IEnumerable<SelectListItem> stages = db.Stages.Select(s => new
+          SelectListItem
+    {
+        Value = s.StageId.ToString(),
+        Text = s.StageName
+    });
+
+    var projectSteps = db.Steps.Where(s => s.Stage.projectId == theBom.projectId);
+    IEnumerable<SelectListItem> steps = projectSteps.Select(c => new
+                  SelectListItem
+    {
+        Value = c.StepId.ToString(),
+        Text = c.Stage.StageAbbreviation+" "+c.StepName
+    }); 
+
+}
+<form method="post" action="">
+@*    @Html.Label("id")
+    @Html.TextBox("id",theBom.id)
+    @Html.Label("stageId")
+    @Html.DropDownList("stageId", stages)
+    @Html.TextBox("stageId", theBom.stageId)
+*@</form>

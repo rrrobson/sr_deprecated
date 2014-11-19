@@ -1,0 +1,83 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    var db = new SoftrockDocsStagingEntities();
+    Page.Title = "Bill of Materials";
+
+    //*********driver variables***************
+    var stageAbbreviation = "bom";
+    var projectFolder = "softrock40r";
+    //**************************************************
+
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+    var bandName = Session["bandName"];
+    Page.BandName = bandName;
+
+    var allBands = Funcs.allBands();
+    
+    var components =
+        from c in db.Components
+        orderby c.component1
+        select new
+        {
+            component = c.component1
+            ,
+            notes=c.notes
+            ,
+            marking = c.marking
+            ,
+            category = c.category
+            ,
+            componentType = c.ComponentType1.componentType1
+            ,
+            image = c.photoLink
+            ,
+            numericValue = c.numericValue
+            ,
+            selectedBoms = from b in c.BOMs
+                           where b.projectId==theProjectId
+                           && (b.bandId==theBandId || b.bandId==allBands )
+                           select new { designation = b.designation, qty = 1 }
+        };
+    components = from c in components
+                 where c.selectedBoms.Count() > 0
+                 orderby c.componentType, c.numericValue
+                 select c;
+
+    <h2>Project Bill of Materials</h2>
+    <h3>Notes</h3>
+    <h4>By-Pass Capacitors</h4>
+    <p>The 0.1uF and 0.01uF SMT caps are furnished in strips the 0.1uF caps are in a strip with a black stripe). 
+    Tony tries to include at 
+    least one additional 0.1uF and 0.01uF in case of accident or loss of a chip.  
+    Unfortunately, he cannot do so for the other capacitors, so builder beware!</p>
+    <table>
+    <tr><th>Check</th><th>Qty</th><th>Type</th><th>Category</th>
+    <th>Component</th><th>Marking</th><th>Image</th></tr>
+
+    @foreach (var row in components)
+    {
+        <tr>
+        <td>[&nbsp;&nbsp;]</td>
+        <td>@row.selectedBoms.Sum(a => a.qty)</td>
+        <td>@row.componentType</td>
+        <td>@row.category</td>
+        <td>@row.component</td>
+        <td>@row.marking</td>
+        <td>
+        @if (row.image != null)
+        {
+            var imgSrc = Href("~/images/" + row.image);
+            <text><img src="@imgSrc" alt="@row.component" /></text>
+        }
+
+        </td>
+        </tr>
+    }
+    </table>
+}
+
+    

@@ -1,0 +1,83 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    var theProjectId = Request["projectId"].AsInt();
+    var theStageId = Request["StageId"].AsInt();
+    var theStepId = Request["StepId"].AsInt();
+    
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var scope = "";
+    var scopingId = ""; //projectId or StageId or StepId for passing
+    var indexType="";
+    if(theProjectId>0)
+    {
+        var theProject = db.Projects
+            .Where(p => p.projectId == theProjectId)
+            .SingleOrDefault();
+        scope = theProject.projectName;
+        scopingId = "projectId="+theProjectId.ToString();
+        indexType = "project";
+    }
+    if (theStageId > 0)
+    {
+        var theStage = db.Stages
+            .Where(p => p.StageId == theStageId)
+            .SingleOrDefault();
+        scope = theStage.StageName;
+        scopingId = "StageId=" + theStageId.ToString();
+        indexType = "stage";
+    }
+    if (theStepId > 0)
+    {
+        var theStep = db.Steps
+            .Where(p => p.StepId == theStepId)
+            .SingleOrDefault();
+        scope = theStep.StepName;
+        scopingId = "StepId=" + theStepId.ToString();
+        indexType = "step";
+    }
+    Page.Title = "Index of BOMS for " + scope;
+    
+    var bomsToList= 
+        from b in db.BOMs
+        where (b.projectId==theProjectId && indexType=="project")
+        || (b.stageId==theStageId && indexType=="stage")
+        || (b.stepId==theStepId && indexType=="step")
+        orderby b.designation, b.Band.bandName
+        select new
+        {
+              id =b.id
+            , designation=b.designation
+            , component=b.Component.component1
+            , project=b.Project.projectName
+            , stage=b.Stage.StageName
+            , step=b.Step.StepName
+            , marking=b.Component.marking
+            , band=b.Band.bandName
+        };
+    
+}
+
+<a href="@Href("~/Boms/add?projectId="+ theProjectId+"&StageId=" + theStageId+ "&StepId="+theStepId)">Add a New BOM</a>
+<table>
+<tr><th>Desig.</th><th>Band</th><th>Component</th><th>Project</th>
+<th>Stage</th><th>Step</th><th>Marking</th><th>Action</th></tr>
+@foreach(var b in bomsToList)
+{
+    <tr>
+    <td>@b.designation</td>
+    <td>@b.band</td>
+    <td>@b.component</td>
+    <td>@b.project</td>
+    <td>@b.stage</td>
+    <td>@b.step</td>
+    <td>@b.marking</td>
+    <td>
+    <a href="@Href("~/Boms/view?id="+ @b.id+"&"+@scopingId)">View</a>
+    <a href="@Href("~/Boms/edit?id="+ @b.id+"&"+@scopingId)">Edit</a>
+    <a href="@Href("~/Boms/delete?id="+ @b.id+"&"+@scopingId)">Delete</a>
+
+    </td>
+    </tr>
+}
+</table>

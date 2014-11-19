@@ -1,0 +1,17 @@
+﻿@{
+ 
+    <h1>Anonymous Logins</h1>
+    var userDb = Database.Open("StarterSite");
+    var users = userDb.Query("SELECT * FROM UserProfile ORDER BY email");
+    <p>Here are the users which do not have a link into the member roster database:
+    </p>
+    <ol>
+    @foreach (var user in users)
+    {
+        if(user.memberId==null || user.memberId==-1)
+        {
+            <li>@user.Email</li> 
+        }
+    }   
+    </ol>
+}

@@ -1,0 +1,175 @@
+﻿@using SoftrockDocsStagingModel;
+
+@helper renderStageBom(int theProjectId, string stageAbbrev, int? bandId)
+    {
+    var allBands = Funcs.allBands();
+    var db = new SoftrockDocsStagingEntities();
+
+    var theBand = db.Bands.Where(b => b.bandId == bandId).SingleOrDefault();
+    
+    var components =
+        from c in db.Components
+        orderby c.component1
+        select new
+        {
+            component = c.component1,
+            marking = c.marking,
+            category = c.category,
+            componentType = c.ComponentType1.componentType1,
+            image = c.photoLink,
+            numericValue = c.numericValue,
+            esd=c.esd,
+            selectedBoms = from b in c.BOMs
+                           where b.projectId == theProjectId
+                           && (b.bandId == allBands
+                                || b.bandId == (bandId == null ? 0 : bandId)
+                              )
+                           && b.Stage.StageAbbreviation == stageAbbrev
+                           select new { designation = b.designation, qty = 1 }
+        };
+    components = from c in components
+                 where c.selectedBoms.Count() > 0
+                 orderby c.componentType, c.numericValue
+                 select c;
+
+    <h2>Stage Bill of Materials 
+    @(theBand.bandName  == "all" ? "" :
+                    " (" + theBand.bandName + " band option)")
+    </h2>
+    <table>
+    <tr><th>Check</th><th>Type</th><th>Category</th>
+    <th>Component</th><th>Count</th><th>Marking</th><th>Image</th></tr>
+
+    @foreach (var row in components)
+    {
+        <tr @if(row.esd){<text> style="color:Red;" </text>}>
+        <td>[&nbsp;&nbsp;]</td>
+        <td>@row.componentType</td>
+        <td>@row.category</td>
+        <td>@row.component</td>
+        <td>@row.selectedBoms.Sum(a => a.qty)</td>
+        <td>@row.marking
+        @if(row.esd){<text>  ESD!!!</text>}</td>
+        <td>
+        @if (row.image != null)
+        {
+            var imgSrc = Href("~/images/" + row.image);
+            <text><img src="@imgSrc" alt="@row.component" /></text>
+        }
+
+        </td>
+        </tr>
+    }
+    </table>
+}
+
+@helper renderProjectImage(string projectFolder, string fileName, string alt)
+    {
+    <img src="@Href("~/" + projectFolder + "/images/" + fileName)" alt="@alt"/>
+}
+@helper renderStageSchematic(string stageAbbreviation, string projectFolder)
+    {
+    <h2>Stage Schematic</h2>
+    <img src="@Href("~/" + projectFolder + "/images/" + stageAbbreviation + ".gif")" alt="@stageAbbreviation stage schematic"/>
+}
+@helper renderBoardTopLayout(string stageAbbreviation, string projectFolder)
+    {
+    <h3>Board Top</h3>
+    <img src="@Href("~/" + projectFolder + "/images/" + stageAbbreviation + "_top.gif")" 
+         alt="@stageAbbreviation stage topside"/>
+}
+@helper renderBoardBottomLayout(string stageAbbreviation, string projectFolder)
+    {
+    <h3>Board Bottom</h3>
+    <img src="@Href("~/" + projectFolder + "/images/" + stageAbbreviation + "_bottom.gif")" 
+         alt="@stageAbbreviation stage underside"/>
+}
+@helper renderCompletedTop(string stageAbbreviation, string projectFolder)
+    {
+    <h3>View of Completed Topside</h3>
+    <img src="@Href("~/" + projectFolder + "/images/" + stageAbbreviation + "_completed_top.gif")" 
+         alt="@stageAbbreviation stage completed topside"/>
+}
+@helper renderCompletedBottom(string stageAbbreviation, string projectFolder)
+    {
+    <h3>View of Completed Underside</h3>
+    <img src="@Href("~/" + projectFolder + "/images/" + stageAbbreviation + "_completed_bottom.gif")" 
+         alt="@stageAbbreviation stage completed underside"/>
+}
+@helper renderTestRow(string seq, string testPoint, string units,
+string nominal, string author)
+    {
+    <tr>
+    <td>@seq</td>
+    <td>@testPoint</td>
+    <td>@units</td>
+    <td>@Html.Raw(nominal)</td>
+    <td>@author</td>
+    <td>___________</td>
+    </tr>    
+}
+
+@helper renderDropdownList(
+      string fieldName
+    , IEnumerable<SelectListItem> itemList
+    , object selectedValue
+    , string defaultValue
+    , string labelText
+    , bool labelAbove = false)
+    {
+        <label>@labelText</label>
+        if (labelAbove)
+        {<br />}
+        <select id="@fieldName" name="@fieldName">
+            <option value="">@defaultValue</option>
+            @foreach (var o in itemList)
+            {
+                <option value="@o.Value"
+                @if (o.Value.Trim() ==
+                    (selectedValue == null ? "" : selectedValue.ToString().Trim())
+                    )
+                { <text> selected="selected"</text>}
+                >@o.Text</option>
+            }
+        </select>
+    }
+@helper renderStepBomLine(BOM b)
+    {
+    <tr @if (b.Component.esd)
+        {<text> style="color:Red;"</text>}>
+    <td>[&nbsp;&nbsp;]</td>
+    <td>@b.designation</td>
+    <td>@b.Component.component1</td>
+    <td>@b.bottom_or_top</td>
+    <td>@b.Component.marking
+        @if (b.Component.esd)
+        {<text> <b>ESD!!!</b></text>}
+    </td>
+    <td>
+    @if (b.Component.photoLink != null)
+    {<text><img src="@Href("~/images/" + @b.Component.photoLink)" alt="@b.Component.component1" /></text>}
+    </td>
+    <td>@(b.Band.bandName.ToLower()=="all"?"any":b.Band.bandName)</td>
+    </tr>
+}
+@helper renderSR40R_railTest()
+{
+ 
+    //  softrock40=specific test in each stage 
+    <h3>USB Rail Integrity Test</h3>
+    <img src="@Href("~/softrock40r/images/ps_usb_bus_test.gif")" style="float:left;"/>
+    <p >Before powering up, check the resistance across the 5V USB connections
+    (pins 1 (5V) and 4 (gnd) of J1).  If you get something very close to zero, 
+    you may have introduced a short and the possibility of "frying" your
+    PC's USB Power Bus.
+    </p>
+    <p style="clear:left;"> </p>
+
+}
+@helper completedPhotosCaveat(string band){
+    <p><em>Note: the completed pictures are of the @band option, 
+    which the author built.  Other band options (which the author did not build)
+will appear slightly different (especially the inductors, whose
+windings and cores will vary by band) for the band-specific components.</em></p>
+    }
+}

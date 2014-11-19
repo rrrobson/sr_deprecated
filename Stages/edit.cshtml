@@ -1,0 +1,94 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    //Add Step
+    var theStageId = Request["StageId"].AsInt();
+    
+        
+        
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var theStage = db.Stages.Where(s=>s.StageId==theStageId)
+        .SingleOrDefault();
+
+    if (theStage == null)
+    {
+        Response.Redirect(Href("~/Projects"));
+    }
+    
+    Page.Title = Html.Raw("Edit Stage "+theStage.StageName);
+
+
+    var success = false;
+    var theProject=db.Projects.Where(p=>p.projectId==theStage.projectId).SingleOrDefault();
+    if(IsPost)
+    {
+        if(Request["submit"]=="Submit")
+        {
+            try
+            {
+                theStage.buildSequence = Request["buildSequence"].AsFloat();
+                theStage.StageName = Request["StageName"];
+                theStage.StageAbbreviation = Request["StageAbbreviation"];
+                theStage.intro = Request.Unvalidated("intro");
+                theStage.theory = Request.Unvalidated("theory");
+                db.SaveChanges();
+                success = true; 
+            }
+            catch (Exception e)
+            {@e.Message}
+        } // submitted with changes
+        else
+        {
+            Response.Redirect(Href("~/Stages?projectId=" + theProject.projectId));
+        } //submitted with no changes       
+    }
+    
+}
+<style>
+    input[type='text']
+    {
+        width:20em;
+    }
+</style>
+<form method="post" action="">
+    <input type="hidden" name="StageId" value="@theStage.StageId" />
+    <input type="submit" value="Submit" name="submit" />
+    <input type="submit" value="Return - No Changes" name="submit" />
+<table>
+    <tr>
+    <td>@Html.Label("Parent Project")</td>
+    <td>@Html.Label(theStage.Project.projectName)</td>
+    </tr>
+    <tr>
+        <td>@Html.Label("Stage Name")</td>
+        <td>@Html.TextBox("StageName",theStage.StageName)</td>
+    </tr>
+    <tr>
+        <td>@Html.Label("Sequence in Project")</td>
+        <td>@Html.TextBox("buildSequence",theStage.buildSequence)</td>
+    </tr>
+    <tr>
+        <td>@Html.Label("Stage Abbreviation")</td>
+        <td>@Html.TextBox("StageAbbreviation",theStage.StageAbbreviation)</td>
+    </tr>
+    <tr>
+        <td>@Html.Label("Introductory Text")</td>
+        <td>@Html.TextArea("intro",theStage.intro,new{cols=60,rows=15})</td>
+    </tr>
+    <tr>
+        <td>@Html.Label("Theory of Operation")</td>
+        <td>@Html.TextArea("theory",theStage.theory,new{cols=60,rows=15})</td>
+    </tr>
+</table>    
+</form>
+<p>Steps in thie Stage:</p>
+<ol>
+@foreach (var s in theStage.Steps.OrderBy(s => s.sequence))
+{
+    <li>@s.StepName</li>
+}
+</ol>
+@if (success)
+{
+    Response.Redirect(Href("~/Stages?projectId="+ theProject.projectId));
+}

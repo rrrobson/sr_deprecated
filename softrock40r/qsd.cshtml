@@ -1,0 +1,136 @@
+﻿@using SoftrockDocsStagingModel;
+@{  
+    //*********driver variables***************
+    var stageAbbreviation = "qsd";
+    var projectFolder = "softrock40r";
+    //**************************************************
+
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+    var bandName = Session["bandName"];
+    Page.BandName = bandName;
+    
+    
+    var db = new SoftrockDocsStagingEntities();
+    //find the stage using projectId and stageAbbreviation
+    var thisStage = db.Stages
+        .Where(s => s.projectId == theProjectId && s.StageAbbreviation == stageAbbreviation)
+        .SingleOrDefault()
+    ;
+
+    
+    Page.Title = thisStage.Project.projectName + ":  " + thisStage.StageName;
+
+    var allBands = Funcs.allBands();
+    var bomLines = from b in db.BOMs
+                   where b.projectId == theProjectId
+                   && b.Stage.StageAbbreviation == thisStage.StageAbbreviation
+                   && (b.bandId == theBandId || b.bandId == allBands)
+                   orderby b.bottom_or_top
+                          , b.Stage.buildSequence
+                   select b;
+}
+
+@*Intro, Schematics, and Layouts*@
+<h2>Introduction</h2>
+<h3>General Info About the Stage</h3>
+<p>This is the final stage before hooking up the antenna and stereo audio cables
+and running the "smoke test".</p>
+<h3>Theory of Operation</h3>
+<p>The Quadrature Sampling Detector (QSD) 
+or "mixer" acts like two traditional direct conversion mixers 
+operating in tandem. Each takes in half of the filtered RF from 
+the bandpass filter stage and one of the quadrature 
+center frequency signals, then "mixes"/down-converts them 
+to an output being the traditional mixer products, in this case, 
+two (infra) audio frequency signals that represent the 
+difference between the two inputs (RF and Local Oscillator). 
+These two signals are referred to as the detected I (in-phase) and 
+Q (Quadrature) signals and are fed into the high gain Op-Amps stage
+for amplification and delivery to the audio outputs (and, 
+thence, to the PC's sound card). 
+</p>
+@MyHelpers.renderStageSchematic(thisStage.StageAbbreviation, projectFolder)
+<h2>Board Layouts</h2>
+@MyHelpers.renderBoardTopLayout(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderBoardBottomLayout(thisStage.StageAbbreviation, projectFolder)    
+@********************** Stage BOM *******************************@
+@MyHelpers.renderStageBom(theProjectId, thisStage.StageAbbreviation,theBandId)
+
+
+<h2>Detailed Build Steps</h2>
+@foreach (var s in thisStage.Steps)
+{
+    <h3>@s.StepName</h3>
+    if (!String.IsNullOrEmpty(s.description))
+    {
+        @Html.Raw(s.description)
+    }
+
+<table>
+<tr><th>Check</th><th>Designation</th>
+<th>Component</th>
+<th>top/Bottom</th><th>Marking</th><th>Image</th>
+<th>Band</th></tr>
+@foreach (var b in bomLines
+    .Where(b => b.stepId == s.StepId)
+    .OrderBy(b => b.stepSeq)
+    )
+{
+    @MyHelpers.renderStepBomLine(b)
+}
+</table>
+}
+@***********************testing*****************************@
+
+
+<a name="completedphotos"></a>
+<h2>Completed Photos</h2>
+@MyHelpers.completedPhotosCaveat("20m")
+@MyHelpers.renderCompletedTop(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderCompletedBottom(thisStage.StageAbbreviation, projectFolder)
+
+<a name="testing"></a>
+<h2>Testing</h2>
+<h3>Overview</h3>
+<p>Before doing any testing, use a bright light and good magnification
+to verify correct soldering.  Soldering problems are the greatest 
+cause of test failures.  
+Pay particular attention to U2.  </p>
+
+@MyHelpers.renderSR40R_railTest()
+
+
+<h3>Voltage Tests - U2 Pins</h3>
+<p>When measuring pin voltages on U2, test the voltage on BOTH the 
+pin and the pad.  This will drive out any cases where the pad has
+the requisite voltage, but a bad solder joint causes
+the pin not to have the same voltage.</p>
+<h4>Test Table</h4>
+<p>Apply USB power and measure the voltages at the 
+following test points/pin numbers shown in the figure below:</p>
+@MyHelpers.renderProjectImage(projectFolder, "qsd_voltage_tests.gif", "QSD Voltage Tests")
+<p>Note: pins 4,5,10, and 13 are omitted in the table below:</p>
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "U2 - Pin 1", "Vdc", "0", "0")
+@MyHelpers.renderTestRow("2", "U2 - Pin 2", "Vdc", "2.15", "2.05")
+@MyHelpers.renderTestRow("3", "U2 - Pin 3", "Vdc", "2.15", "2.07")
+@MyHelpers.renderTestRow("4", "U2 - Pin 6", "Vdc", "2.15", "2.07")
+@MyHelpers.renderTestRow("5", "U2 - Pin 7", "Vdc", "2.15", "2.07")
+@MyHelpers.renderTestRow("6", "U2 - Pin 8", "Vdc", "0", "0")
+@MyHelpers.renderTestRow("7", "U2 - Pin 9", "Vdc", "2.15", "2.07")
+@MyHelpers.renderTestRow("8", "U2 - Pin 11", "Vdc", "2.15", "2.07")
+@MyHelpers.renderTestRow("9", "U2 - Pin 12", "Vdc", "2.15", "2.07")
+@MyHelpers.renderTestRow("10", "U2 - Pin 14", "Vdc", "2.15", "2.05")
+@MyHelpers.renderTestRow("11", "U2 - Pin 15", "Vdc", "0", "0")
+@MyHelpers.renderTestRow("12", "U2 - Pin 16", "Vdc", "4.3", "4.13")
+</table>
+
+
+ <h2>Next, the 
+ <a href="@Href("~/softrock40r/conn")">External Connections and Smoke Test</a></h2>

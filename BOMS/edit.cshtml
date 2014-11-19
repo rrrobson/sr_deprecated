@@ -1,0 +1,187 @@
+﻿@using SoftrockDocsStagingModel;
+@using System.Data.Objects.SqlClient;
+@{
+    var previousPage = Request["previousPage"];
+    if(!IsPost)
+    {
+        previousPage = Request.UrlReferrer.ToString(); 
+    }
+    
+    var theBomId = Request["id"].AsInt();
+    
+    
+    //*****************************************debug
+    //theBomId = 2970;
+
+    Layout = "~/_SiteLayout.cshtml";
+    var success = false;
+    var db = new SoftrockDocsStagingEntities();
+    var theBom = 
+        (
+        from b in db.BOMs
+        where b.id==theBomId
+        select b
+        ).SingleOrDefault()
+    ;
+    Page.Title = "Edit BOM " + theBom.designation + " for " + theBom.Project.projectName;
+    var designation = theBom.designation;
+    var bottom_or_top = theBom.bottom_or_top;
+    var buildSeq = theBom.buildSeq;
+    var stepSeq = theBom.stepSeq;
+    var orientation = theBom.orientation;
+    var notes = theBom.notes;
+    var bandId = theBom.bandId;
+    var componentId = theBom.componentId; 
+    var StageId = theBom.stageId;
+    var StepId = theBom.stepId;
+
+    //setup for Component Dropdown
+    IEnumerable<SelectListItem> ddlComponents = db.Components
+    .OrderBy(c => c.componentType)
+    .ThenBy(c => c.category)
+    .ThenBy(c => c.numericValue)
+    .Select(c => new SelectListItem
+    {
+        Value = SqlFunctions.StringConvert((double?)c.componentId).Trim(),
+        Text = c.componentType+" "+c.component1+"("+c.category+")"
+    });
+
+    //setup for Band Dropdown
+    IEnumerable<SelectListItem> ddlBands = db.Bands
+    .OrderBy(b => b.sequence)
+    .ThenBy(b=> b.bandName)
+    .Select(b => new SelectListItem
+    {
+        Value = SqlFunctions.StringConvert((double?)b.bandId).Trim(),
+        Text = b.bandName
+    });
+    
+    
+    //setup for stage dropdown             
+    IEnumerable<SelectListItem> ddlStages = db.Stages
+    .Where(s => s.projectId==theBom.projectId)
+    .OrderBy(s=>s.buildSequence)
+    .Select(s => new SelectListItem
+    {
+        Value = SqlFunctions.StringConvert((double?)s.StageId),
+        Text = s.StageName
+    });
+    //setup for step dropdown             
+    IEnumerable<SelectListItem> ddlSteps = db.Steps
+    .Where(s=>s.Stageid==StageId)
+    .OrderBy(s=>s.sequence)
+    .Select(s => new SelectListItem
+    {
+        Value = SqlFunctions.StringConvert((double?)s.StepId),
+        Text = s.StepName
+    });
+        var x = 0;
+
+    if(IsPost)
+    {
+        componentId = Request["componentId"].AsInt();
+        if(componentId==0)
+        {
+            ModelState.AddError("componentId", "Component is Required");}
+        bandId = Request.Form["bandId"].AsInt();
+        if (bandId == 0)
+        {
+            ModelState.AddError("bandId", "Must select a band");}
+        StageId=  Request.Form["StageId"].AsInt();
+        StepId = Request.Form["StepId"].AsInt();
+        designation = Request["designation"];
+        if (String.IsNullOrEmpty(designation))
+        {
+            ModelState.AddError("designation", "BOM Must have a designation");}
+        bottom_or_top = Request["bottom_or_top"];
+        buildSeq = Request["buildSeq"].AsDecimal();
+        stepSeq = Request["stepSeq"].AsDecimal();
+        orientation = Request["orientation"];
+        notes = Request.Unvalidated("notes");
+        
+        if(ModelState.IsValid)
+        {
+            try
+            {
+                theBom.notes = notes.Trim();
+                theBom.designation = designation;
+                theBom.orientation = orientation.Trim();
+                theBom.bandId = bandId;
+                theBom.buildSeq = buildSeq;
+                theBom.stepSeq = stepSeq;
+                theBom.componentId = componentId;
+                theBom.stageId = StageId;
+                if (!Request.Form["StepId"].IsEmpty())
+                {theBom.stepId = StepId;}
+                theBom.bottom_or_top = bottom_or_top;
+                db.SaveChanges();
+                success = true;
+                Response.Redirect(Request["previousPage"]);
+            }
+            catch(Exception e)
+            {@e.Message}
+        }
+    }
+}
+@Html.ValidationSummary("Correct following errors")
+<form method="post" action="">
+<input type="hidden" name="previousPage" value="@previousPage" />
+@Html.Label("designation")
+@Html.TextBox("designation", designation)
+<br />
+
+@{
+    var debugStop = true;
+}
+
+@MyHelpers.renderDropdownList("bandId", ddlBands, bandId, "---Select a Band---", "Band")
+<br />
+@MyHelpers.renderDropdownList("componentId", ddlComponents, componentId, "---select a Component---", "Component")
+<br />
+@MyHelpers.renderDropdownList("StageId", ddlStages, StageId, "--Select a Stage---", "Build Stage")
+<br />
+@MyHelpers.renderDropdownList("StepId", ddlSteps, StepId, "---Select a Step---", "Build Step")
+<br />
+@Html.Label("bottom_or_top")
+@Html.TextBox("bottom_or_top", bottom_or_top)
+<br />
+@Html.Label("buildSeq")
+@Html.TextBox("buildSeq", buildSeq)
+<br />
+@Html.Label("stepSeq")
+@Html.TextBox("stepSeq", stepSeq)
+<br />
+@Html.Label("orientation")
+@Html.TextBox("orientation", orientation)
+<br />
+@Html.Label("notes")
+@Html.TextBox("notes", notes)
+<br />
+
+<input type="submit" value="submit" />
+</form>
+@if (StepId != null)
+{
+    <a href="@Href("~/Boms/index?StepId=" + @StepId)">Return to Step's BOM Index</a>
+}
+@if (StageId != null)
+{
+    <a href="@Href("~/Boms/index?StageId=" + @StageId)">Return to Stage's BOM Index</a>
+}
+@if (theBom.projectId >0)
+{
+    <a href="@Href("~/Boms/index?projectId=" + @theBom.projectId)">Return to Project's BOM Index</a>
+}
+<a href="@Href("~/Projects/index?projectId="+@theBom.projectId)">Return to the Project Index</a>
+<a href="javascript:history.go(-1)">
+Go Back
+</a>
+@if (success)
+{
+    <script type="text/javascript">
+        history.go(-1);
+    </script>
+}
+
+
+                                                                                 

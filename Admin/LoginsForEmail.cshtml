@@ -1,0 +1,17 @@
+﻿@{
+    var email=Request["email"];
+    
+    var db = Database.Open("instrumentation"); 
+    var qry="SELECT id, userId, email, page, parms, beginning, ending, elapsed "
+        + " FROM  stressTest"
+        + " WHERE (email = @0) "
+        + " AND page LIKE '%account/login%' "
+        + " ORDER BY beginning DESC"
+        ;   
+    <ul>
+    @foreach (var i in db.Query(qry,email))
+    {
+        <li>@i.beginning @email @i.page @i.parms</li>
+    }
+    </ul>
+}

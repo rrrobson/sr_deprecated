@@ -1,0 +1,100 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    var db = new SoftrockDocsStagingEntities();
+
+    var newComponent = new Component();
+    newComponent.component1 = Request["component1"];
+    newComponent.numericValue = Request["numericValue"].AsFloat();
+    newComponent.marking = Request["marking"];
+    newComponent.category= Request["category"];
+    newComponent.componentType = Request["componentType"];
+    newComponent.photoLink = Request["photoLink"];
+    newComponent.notes = Request.Unvalidated("notes");
+    newComponent.datasheet = Request["datasheet"];
+    newComponent.esd = Request["esd"].AsBool();
+
+    //setup for Component Dropdown
+    IEnumerable<SelectListItem> ddlComponentTypes = db.ComponentTypes
+    .OrderBy(c => c.componentType1)
+    .Select(c => new SelectListItem
+    {
+        Value = c.componentType1,
+        Text = c.componentType1
+    });
+
+    if(IsPost)
+    {
+        if(String.IsNullOrEmpty(Request["component1"]))
+        {
+            ModelState.AddError("component1", "Must have component description");
+        }
+        if (String.IsNullOrEmpty(Request["componentType"]))
+        {
+            ModelState.AddError("componentType", "Must have component type");
+        }
+        if (String.IsNullOrEmpty(Request["category"]))
+        {
+            ModelState.AddError("category", "Must have component category");
+        }
+        var success=false;
+        if(ModelState.IsValid)
+        {
+            try
+            {
+                db.Components.AddObject(newComponent);
+                db.SaveChanges();
+                success = true;
+            }
+            catch (Exception e)
+            {
+                @e
+            }
+        }
+        if(success)
+        {
+            Response.Redirect(Href("~/Components/Index"));
+        }
+    }
+}
+
+<form method="post" action="">
+    <table>
+        <tr>
+            <td>@Html.Label("Component")</td><td>@Html.TextBox("component1",newComponent.component1)</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("Component Type")</td>
+            <td>@Html.DropDownList("componentType","--Select a Type--",ddlComponentTypes)</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("Value")</td><td>@Html.TextBox("numericValue",newComponent.numericValue)</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("Category")</td>
+            <td>@Html.TextBox("category",newComponent.category)</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("Marking")</td>
+            <td>@Html.TextBox("marking",newComponent.marking)</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("Photo Filename")</td>
+            <td>@Html.TextBox("photoLink",newComponent.photoLink)</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("ESD")</td>
+            <td>@Html.RadioButton("esd",newComponent.esd,false)Yes
+                @Html.RadioButton("esd",newComponent.esd,true)No</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("Notes")</td>
+            <td>@Html.TextArea("notes", newComponent.notes, new {cols=50, rows=5 })</td>
+        </tr>
+        <tr>
+            <td>@Html.Label("DataSheet")</td>
+            <td>@Html.TextBox("datasheet", newComponent.datasheet)</td>
+        </tr>
+    </table>
+    <input type="submit" value="Add the Component" name="submit" />
+</form>
+<a href="@Href("~/Components/Index")">Return to Index</a>

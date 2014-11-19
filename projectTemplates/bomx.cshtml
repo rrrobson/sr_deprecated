@@ -1,0 +1,46 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    //*********driver variables***************
+    var stageAbbreviation = ""; //this stage's abbreviation
+    var projectFolder = ""; //folder name (no slashes)
+    //**************************************************
+
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+    //**************************************************
+    Page.Title = "BOM-Stage Cross Reference";
+
+    var allBands = Funcs.allBands();
+    var db = new SoftrockDocsStagingEntities();
+    var bomlines=db.BOMs
+        .Where
+        (
+            b=>b.projectId==theProjectId
+            && (b.bandId==theBandId || b.bandId==allBands)
+        )
+        .OrderBy(b=>b.designation)
+        .ThenBy(b=> b.Band.sequence)
+        ;
+}
+<table>
+<tr><th>Designation</th><th>Component</th>
+<th>Band</th><th>Installed In</th></tr>
+@foreach (var b in bomlines)
+{
+    <tr>
+    <td>@b.designation</td>
+    <td>@b.Component.component1</td>
+    <td>@b.Band.bandName</td>
+    <td>
+    @{
+        var url=@Href(b.Stage.StageAbbreviation+"?StageId=" 
+            + b.stageId);
+    }
+    <a href="@url" title="Click to go to @b.Stage.StageName">@b.Stage.StageName</a>
+    </td>
+    </tr>
+}
+</table>

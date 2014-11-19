@@ -1,0 +1,117 @@
+﻿@using SoftrockDocsStagingModel;
+@{  
+    //*********driver variables***************
+    var stageAbbreviation = "amp";
+    var projectFolder = "softrock40r";    
+    //**************************************************
+
+    //If session needs refreshing, go back to index page
+    if (Session["projectId"] == null || Session["bandId"] == null)
+    { Response.Redirect(Href("~/" + projectFolder + "/index")); };
+    var theProjectId = (int)Session["projectId"];
+    var theBandId = (int)Session["bandId"];
+    var bandName = Session["bandName"];
+    Page.BandName = bandName;
+    //*******************************************************************
+        
+    var db = new SoftrockDocsStagingEntities();
+    //find the stage using projectId and stageAbbreviation
+    var thisStage = db.Stages
+        .Where(s => s.projectId == theProjectId && s.StageAbbreviation == stageAbbreviation)
+        .SingleOrDefault()
+    ;
+
+    
+    Page.Title = thisStage.Project.projectName + ":  " + thisStage.StageName;
+
+    var allBands = Funcs.allBands();
+    var bomLines = from b in db.BOMs
+                   where b.projectId == theProjectId
+                   && b.Stage.StageAbbreviation == thisStage.StageAbbreviation
+                   && (b.bandId == theBandId || b.bandId == allBands)
+                   orderby b.bottom_or_top
+                          , b.Stage.buildSequence
+                   select b;
+}
+
+@*Intro, Schematics, and Layouts*@
+<h2>Introduction</h2>
+<h3>General Info About the Stage</h3>
+<h3>Theory of Operation</h3>
+@MyHelpers.renderStageSchematic(thisStage.StageAbbreviation, projectFolder)
+<h2>Board Layouts</h2>
+@MyHelpers.renderBoardTopLayout(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderBoardBottomLayout(thisStage.StageAbbreviation, projectFolder)    
+@********************** Stage BOM *******************************@
+@MyHelpers.renderStageBom(theProjectId, thisStage.StageAbbreviation,theBandId)
+
+
+<h2>Detailed Build Steps</h2>
+@foreach (var s in thisStage.Steps
+    .OrderBy(s=> s.sequence   ))
+{
+    <h3>@s.StepName</h3>
+    if (!String.IsNullOrEmpty(s.description))
+    {
+        @Html.Raw(s.description)
+    }
+
+<table>
+<tr><th>Check</th><th>Designation</th>
+<th>Component</th>
+<th>top/Bottom</th><th>Marking</th><th>Image</th>
+<th>Band</th></tr>
+@foreach (var b in bomLines.Where(b => b.stepId == s.StepId))
+{
+    @MyHelpers.renderStepBomLine(b)
+}
+</table>
+}
+
+@***********************testing*****************************@
+
+
+<a name="completedphotos"></a>
+<h2>Completed Photos</h2>
+@MyHelpers.completedPhotosCaveat("20m")
+@MyHelpers.renderCompletedTop(thisStage.StageAbbreviation, projectFolder)
+@MyHelpers.renderCompletedBottom(thisStage.StageAbbreviation, projectFolder)
+
+<a name="testing"></a>
+<h2>Testing</h2>
+<h3>Overview</h3>
+<p>Before doing any testing, use a bright light and good magnification
+to verify correct soldering.  Soldering problems are the greatest 
+cause of test failures.  
+Pay particular attention to U3.  </p>
+
+@MyHelpers.renderSR40R_railTest()
+
+
+<h3>Voltage Tests - U3 Pins</h3>
+<p>When measuring pin voltages on U3, test the voltage on BOTH the 
+pin and the pad.  This will drive out any cases where the pad has
+the requisite voltage, but a bad solder joint causes
+the pin not to have the same voltage.</p>
+<h4>Test Table</h4>
+<p>Apply USB power and measure the voltages at the 
+following test points/pin numbers shown in the figure below:</p>
+@MyHelpers.renderProjectImage(projectFolder, "amp_voltage_tests.gif", "OpAmp Voltage Tests")
+<table>
+<tr><th>Seq</th><th>Test Point</th><th>Units</th><th>Nominal<br />Value</th>
+<th>Author's<br />Value</th><th>Your<br />Value</th></tr>
+@MyHelpers.renderTestRow("1", "U3 - Pin 1", "Vdc", "2.15", "2.09*")
+@MyHelpers.renderTestRow("2", "U3 - Pin 1", "Vdc", "2.15", "2.06")
+@MyHelpers.renderTestRow("3", "U3 - Pin 1", "Vdc", "2.15", "2.06")
+@MyHelpers.renderTestRow("4", "U3 - Pin 1", "Vdc", "0", "0")
+@MyHelpers.renderTestRow("5", "U3 - Pin 1", "Vdc", "2.15", "2.06")
+@MyHelpers.renderTestRow("6", "U3 - Pin 1", "Vdc", "2.15", "2.06")
+@MyHelpers.renderTestRow("7", "U3 - Pin 1", "Vdc", "2.15", "2.09*")
+@MyHelpers.renderTestRow("8", "U3 - Pin 1", "Vdc", "4.3", "4.13")
+</table>
+<p>* pins 1 and 7 are the amplified I and Q outputs.  They have been
+known to show different pin voltages from the other nominally 2.15V
+ pins.</p>
+
+ <h2>Next, the 
+ <a href="@Href("~/softrock40r/qsd")">Quadrature Sampling Detector (QSD)</a></h2>

@@ -1,0 +1,50 @@
+﻿@using SoftrockDocsStagingModel;
+
+@{
+    var db = new SoftrockDocsStagingEntities();
+    
+    //********************
+    var theProject=20;
+    //********************
+    
+    var allBands=Funcs.allBands();
+    var bandSpecific = from b in db.BOMs
+                       where b.bandId !=allBands && b.projectId==theProject
+                       orderby b.Stage.buildSequence, b.Step.sequence
+                       , b.designation, b.Band.bandName
+                       select new
+                       {
+                             bomId=b.id
+                           , designation=b.designation
+                           , bandId=b.bandId
+                           , band=b.Band.bandName
+                           , component=b.Component.component1
+                           , stageId=b.stageId
+                           , stepId=b.stepId
+                           , stage=b.Stage.StageName
+                           , step=b.Step.StepName
+                           , photo=b.Component.photoLink
+                       };
+    var projectBands= (from b in bandSpecific
+                      where b.bandId!=allBands
+                      orderby b.band
+                      select new{id=b.bandId, band=b.band}).Distinct();
+    
+                       
+}
+@foreach (var band in projectBands)
+{
+    <h2>Band = @band.band</h2>
+    <table>
+    <tr><th>Designation</th><th>Component</th>
+    <th>Photo</th><th>Stage</th><th>Step</th></tr>
+    @foreach (var b in bandSpecific.Where(b=>b.bandId==band.id))
+    {
+        <tr>
+        <td>@b.designation</td><td>@b.component</td>
+        <td><img src="@Href("~/images/"+b.photo)" alt="image" /></td>
+        <td>@b.stage</td><td>@b.step</td>
+        </tr>
+    }
+    </table>
+}

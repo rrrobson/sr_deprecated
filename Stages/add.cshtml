@@ -1,0 +1,64 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    //Add Step
+    var theProjectId = Request["projectId"].AsInt();
+        
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var theProject = db.Projects.Where(p => p.projectId == theProjectId).SingleOrDefault();
+    
+
+    
+    Page.Title = Html.Raw("Add Stage to "+theProject.projectName);
+
+    var success = false;
+    if(IsPost)
+    {
+        try
+        {
+            Stage newStage=new Stage();
+            newStage.projectId=Request["projectId"].AsInt();
+            newStage.buildSequence=Request["buildSequence"].AsFloat();
+            newStage.StageName=Request["StageName"];
+            newStage.StageAbbreviation=Request["StageAbbreviation"];
+            newStage.intro=Request.Unvalidated("intro");
+            newStage.theory=Request.Unvalidated("theory");
+            newStage.pageMap=Request.Unvalidated("pageMap");
+            db.Stages.AddObject(newStage);
+            db.SaveChanges();               
+            success=true;
+            Response.Redirect(Href("~/STages/index?projectId="+theProjectId));
+        }
+        catch(Exception e)
+        {
+            success=false;
+            @e.Message
+        }
+    }    
+}
+<form method="post" action="">
+    <input type="hidden" name="projectId" value="@theProjectId" />
+    <input type="submit" name="submit" value="Submit" />
+    <table>
+    <tr>
+        <td>@Html.Label("Project")</td><td>@Html.Label(theProject.projectName)</td>
+    </tr>
+    <tr>    
+        <td>@Html.Label("buildSequence")</td><td>@Html.TextBox("buildSequence")</td>
+    </tr>
+    <tr>    
+        <td>@Html.Label("StageName")</td><td>@Html.TextBox("StageName")</td>
+    </tr>
+    <tr>    
+        <td>@Html.Label("StageAbbreviation")</td><td>@Html.TextBox("StageAbbreviation")</td>
+    </tr>
+    <tr>    
+        <td>@Html.Label("intro")</td><td>@Html.TextArea("intro",new{cols=60, rows=15})</td>
+    </tr>
+    <tr>    
+        <td>@Html.Label("theory")</td><td>@Html.TextArea("theory",new{cols=60, rows=15})</td>
+    </tr>
+    </table>
+</form>
+<a href="@Href("~/STages/index?projectId=" + theProjectId)">
+Return to the Stages Index</a>

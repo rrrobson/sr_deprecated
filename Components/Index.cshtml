@@ -1,0 +1,76 @@
+﻿@using SoftrockDocsStagingModel;
+@using System.Data.Linq.SqlClient;
+@{
+    var db = new SoftrockDocsStagingEntities();
+    var searchArg = Request["searchArg"];
+    if (searchArg == null)
+    {
+        searchArg = " ";}
+    Page.Title = "Index of Components";
+    var components =
+        from c in db.Components
+        where  c.category.Contains(searchArg)
+            || c.componentType.Contains(searchArg)
+            || c.component1.Contains(searchArg)
+        orderby c.componentType, c.category, c.numericValue
+        select c
+    ;
+    int lineNbr=0;
+    if(IsPost)
+    {
+        if(!String.IsNullOrEmpty(searchArg))
+        {
+            //components =
+            //        from c in db.Components
+            //        where ( c.componentType.Contains(searchArg)
+            //        || c.category.Contains(searchArg))
+            //        orderby c.componentType, c.category, c.numericValue
+            //        select c
+                ;
+        }
+    }
+    
+}
+<form>
+<input type="text" name="searchArg" value="@searchArg" />
+<input type="submit" value="Search for Components COntaining Arg" name="submit" />
+</form>
+<a href="@Href("~/Components/Add")">Add A New Comnponent</a>
+<table>
+<tr>
+<th>Component</th><th>Type</th><th>Category</th><th>Value</th>
+<th>Marking</th><th>Photo</th><th>Action</th>
+</tr>
+@foreach (var c in components)
+{
+    lineNbr++;
+    <tr @if (lineNbr % 2 == 0)
+        {<text> style="background-color:Aqua;"</text>}>
+    <td>@c.component1</td>
+    <td>@c.componentType</td>
+    <td>@c.category</td>
+    <td>
+    @if (c.numericValue != null)
+    {
+        if (c.numericValue == 0)
+            {<text></text>}
+        if (Math.Abs((double)c.numericValue) < 999)
+            {@c.numericValue}
+        if (Math.Abs((double)c.numericValue) > 999)
+            {@String.Format("{0:E}", c.numericValue)}
+    }
+    </td>
+    <td>@c.marking</td>
+    <td>@if (c.photoLink != null)
+        {<img src="@Href("~/images/"+c.photoLink)" alt="@c.componentType photo" />}
+        else
+        {<text>n/a</text>}
+    </td>
+    <td>
+        <a href="@Href("~/Components/Details?id="+ c.componentId+"&searchArg="+searchArg)">Details</a>
+        <a href="@Href("~/Components/Edit?id=" + c.componentId + "&searchArg=" + searchArg)">Edit</a>
+        <a href="@Href("~/Components/Delete?id=" + c.componentId + "&searchArg=" + searchArg)">Delete</a>
+    </td>
+    </tr>
+}
+</table>

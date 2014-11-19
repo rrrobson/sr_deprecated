@@ -1,0 +1,60 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+    var componentId=Request["id"].AsInt();
+    var db = new SoftrockDocsStagingEntities();
+    Page.Title = "Details of Component";
+    var component =
+        (from c in db.Components
+        where c.componentId==componentId
+        select c).SingleOrDefault()
+    ;
+
+    var projects =
+        (from b in component.BOMs
+         select 
+         new {projectName=b.Project.projectName}).Distinct()
+        ;
+    
+}
+<table>
+
+<tr>
+<td>ID</td><td>@component.componentId</td>
+</tr>
+<tr>
+<td>Component</td><td>@component.component1</td>
+</tr>
+<tr>
+<td>Type</td><td>@component.componentType</td>
+</tr>
+<tr>
+<td>Category</td><td>@component.category</td>
+</tr>
+<tr>
+<td>Marking</td><td>@component.marking</td>
+</tr>
+<tr>
+<td>Value</td><td>@component.numericValue</td>
+</tr>
+<tr>
+<td>Photo</td><td>@component.photoLink</td>
+</tr>
+<tr>
+<td>ESD?</td><td>@component.esd</td>
+</tr>
+<tr>
+<td>DataSheet</td><td>@component.datasheet</td>
+</tr>
+<tr>
+<td>Notes</td><td>@component.notes</td>
+</tr>
+
+</table>
+<h3>Used in Projects:</h3>
+<table>
+@foreach (var p in projects)
+{
+    <tr><td>@p.projectName</td></tr>
+}
+</table>
+<a href="@Href("~/Components/Index")">Return to Index</a>

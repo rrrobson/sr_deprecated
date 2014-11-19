@@ -1,0 +1,14 @@
+﻿@{
+    //WebSecurity.InitializeDatabaseConnection("SoftrockDocsStaging", "UserProfile", "UserId", "Email", false);
+    //Even though SqlServer DB has user profile, we are using startersite (SQL CE)
+    //on website, starterSite is a SQL SERVER CE (sdf) database; here is in SQL SERVER (mdf)
+    
+    //ftp is rrrobson r088Yr050N
+    WebSecurity.InitializeDatabaseConnection("StarterSite", "UserProfile", "UserId", "Email", false);
+    // WebMail.SmtpServer = "mailserver.example.com";
+    // WebMail.EnableSsl = true;
+    // WebMail.UserName = "username@example.com";
+    // WebMail.Password = "your-password";
+    // WebMail.From = "your-name-here@example.com";
+    
+}

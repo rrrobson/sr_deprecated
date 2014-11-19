@@ -1,0 +1,60 @@
+﻿
+
+@{
+    
+}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>WB5RVZ - @Page.Title (@Page.bandName band)</title>
+        <link href="@Href("~/Styles/Site.css")" rel="stylesheet" />
+        <link href="@Href("~/favicon.ico")" rel="shortcut icon" type="image/x-icon" />
+    </head>
+    <body>
+        <div id="page">
+            <div id="header">
+                <p class="site-title">WB5RVZ.Org - Documentation Projects</p>
+                <div id="login">
+                    @if (WebSecurity.IsAuthenticated)
+                    { 
+                        <p>
+                            Welcome <a href="@Href("~/Account/ChangePassword")" title="Change password">@WebSecurity.CurrentUserName</a>!
+                            <a href="@Href("~/Account/Logout")">Logout</a>
+                        </p>
+                    }
+                    else
+                    {
+                        <ul>
+                            <li><a href="@Href("~/Account/Register")">Register</a></li>
+                            <li><a href="@Href("~/Account/Login")">Login</a></li>
+                        </ul>
+                    }
+                </div>
+                <ul id="menu">
+                    <li><a href="@Href("~/")">WB5RVZ Home</a></li>
+                    <li><a href="@Href("~/softrock40r/index/projectId=20")">Home</a></li>
+                    <li><a href="@Href("~/softrock40r/index/?changeBands=yes")">Bands</a></li>
+                    <li><a href="@Href("~/softrock40r/bom")">BOM</a></li>
+                    <li><a href="@Href("~/softrock40r/bomx")">BOM-Xref</a></li>
+                    <li><a href="@Href("~/softrock40r/ps")">PowerSupply</a></li>
+                    <li><a href="@Href("~/softrock40r/lo")">Local Oscillator</a></li>
+                    <li><a href="@Href("~/softrock40r/bpf")">BPF</a></li>
+                    <li><a href="@Href("~/softrock40r/amp")">OpAmps</a></li>
+                    <li><a href="@Href("~/softrock40r/qsd")">QSD</a></li>
+                    <li><a href="@Href("~/softrock40r/conn")">Ext Connections</a></li>
+                    <li><a href="@Href("~/About")">About</a></li>
+                </ul>
+            </div>
+            <div id="main">
+                <div id="content">
+                    <h1>@Page.Title <br/> Band: @Page.bandName</h1>
+                    @RenderBody()
+                </div>
+                <div id="footer">
+                    &copy; @DateTime.Now.Year - WB5RVZ.ORG
+                </div>
+            </div>
+        </div>
+    </body>
+</html>    

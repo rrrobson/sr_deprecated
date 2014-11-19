@@ -1,0 +1,684 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="2.0" xmlns:edmx="http://schemas.microsoft.com/ado/2008/10/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="SoftrockDocsStagingModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2008" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/02/edm/ssdl">
+        <EntityContainer Name="SoftrockDocsStagingModelStoreContainer">
+          <EntitySet Name="Band" EntityType="SoftrockDocsStagingModel.Store.Band" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="BOM" EntityType="SoftrockDocsStagingModel.Store.BOM" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Component" EntityType="SoftrockDocsStagingModel.Store.Component" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="ComponentType" EntityType="SoftrockDocsStagingModel.Store.ComponentType" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Projects" EntityType="SoftrockDocsStagingModel.Store.Projects" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Stage" EntityType="SoftrockDocsStagingModel.Store.Stage" store:Type="Tables" Schema="dbo" />
+          <EntitySet Name="Step" EntityType="SoftrockDocsStagingModel.Store.Step" store:Type="Tables" Schema="dbo" />
+          <AssociationSet Name="FK_BOM_Band" Association="SoftrockDocsStagingModel.Store.FK_BOM_Band">
+            <End Role="Band" EntitySet="Band" />
+            <End Role="BOM" EntitySet="BOM" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Component" Association="SoftrockDocsStagingModel.Store.FK_BOM_Component">
+            <End Role="Component" EntitySet="Component" />
+            <End Role="BOM" EntitySet="BOM" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Projects" Association="SoftrockDocsStagingModel.Store.FK_BOM_Projects">
+            <End Role="Projects" EntitySet="Projects" />
+            <End Role="BOM" EntitySet="BOM" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Stage" Association="SoftrockDocsStagingModel.Store.FK_BOM_Stage">
+            <End Role="Stage" EntitySet="Stage" />
+            <End Role="BOM" EntitySet="BOM" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Step" Association="SoftrockDocsStagingModel.Store.FK_BOM_Step">
+            <End Role="Step" EntitySet="Step" />
+            <End Role="BOM" EntitySet="BOM" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Component_ComponentType" Association="SoftrockDocsStagingModel.Store.FK_Component_ComponentType">
+            <End Role="ComponentType" EntitySet="ComponentType" />
+            <End Role="Component" EntitySet="Component" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Stage_Project" Association="SoftrockDocsStagingModel.Store.FK_Stage_Project">
+            <End Role="Projects" EntitySet="Projects" />
+            <End Role="Stage" EntitySet="Stage" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Step_Stage" Association="SoftrockDocsStagingModel.Store.FK_Step_Stage">
+            <End Role="Stage" EntitySet="Stage" />
+            <End Role="Step" EntitySet="Step" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="Band">
+          <Key>
+            <PropertyRef Name="bandId" />
+          </Key>
+          <Property Name="bandId" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="bandName" Type="nvarchar" MaxLength="255" />
+          <Property Name="lowFreq" Type="int" />
+          <Property Name="hiFreq" Type="int" />
+          <Property Name="sequence" Type="int" />
+        </EntityType>
+        <EntityType Name="BOM">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="designation" Type="nchar" Nullable="false" MaxLength="100" />
+          <Property Name="componentId" Type="int" Nullable="false" />
+          <Property Name="projectId" Type="int" Nullable="false" />
+          <Property Name="stageId" Type="int" />
+          <Property Name="stepId" Type="int" />
+          <Property Name="bottom_or_top" Type="nchar" MaxLength="10" />
+          <Property Name="buildSeq" Type="numeric" Scale="2" />
+          <Property Name="stepSeq" Type="numeric" Scale="2" />
+          <Property Name="orientation" Type="nchar" MaxLength="50" />
+          <Property Name="notes" Type="nchar" MaxLength="3000" />
+          <Property Name="bandId" Type="int" />
+          <Property Name="testField" Type="numeric" Scale="2" />
+        </EntityType>
+        <EntityType Name="Component">
+          <Key>
+            <PropertyRef Name="componentId" />
+          </Key>
+          <Property Name="componentId" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="component" Type="nvarchar" MaxLength="50" />
+          <Property Name="numericValue" Type="float" />
+          <Property Name="marking" Type="nvarchar" MaxLength="50" />
+          <Property Name="category" Type="nvarchar" MaxLength="50" />
+          <Property Name="componentType" Type="nvarchar" MaxLength="50" />
+          <Property Name="photoLink" Type="nvarchar" MaxLength="50" />
+          <Property Name="notes" Type="nvarchar(max)" />
+          <Property Name="datasheet" Type="nvarchar" MaxLength="250" />
+          <Property Name="esd" Type="bit" Nullable="false" />
+          <Property Name="nospace" Type="nvarchar" MaxLength="50" />
+          <Property Name="hide_from_step" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="ComponentType">
+          <Key>
+            <PropertyRef Name="componentType" />
+          </Key>
+          <Property Name="componentType" Type="nvarchar" Nullable="false" MaxLength="50" />
+          <Property Name="prefix" Type="nvarchar" MaxLength="50" />
+        </EntityType>
+        <EntityType Name="Projects">
+          <Key>
+            <PropertyRef Name="projectId" />
+          </Key>
+          <Property Name="projectId" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="projectName" Type="nvarchar" MaxLength="50" />
+          <Property Name="projectType" Type="nvarchar" MaxLength="50" />
+          <Property Name="workingDirectory" Type="nvarchar" MaxLength="255" />
+          <Property Name="summaryBuildNotes" Type="nvarchar(max)" />
+          <Property Name="beta" Type="bit" Nullable="false" />
+          <Property Name="website" Type="nvarchar" MaxLength="255" />
+          <Property Name="webroot" Type="nvarchar" MaxLength="250" />
+          <Property Name="full_schematic" Type="bit" Nullable="false" />
+          <Property Name="completed_pictures" Type="bit" Nullable="false" />
+          <Property Name="red_dots" Type="bit" Nullable="false" />
+          <Property Name="vendor" Type="nvarchar" MaxLength="50" />
+          <Property Name="detailed_BOM" Type="bit" Nullable="false" />
+          <Property Name="schematicLink" Type="nvarchar" MaxLength="50" />
+          <Property Name="band_specific_links" Type="bit" Nullable="false" />
+          <Property Name="maxinventory" Type="bit" Nullable="false" />
+          <Property Name="schematicNotes" Type="nvarchar(max)" />
+          <Property Name="inventoryNotes" Type="nvarchar(max)" />
+          <Property Name="projectFolder" Type="nchar" MaxLength="150" />
+        </EntityType>
+        <EntityType Name="Stage">
+          <Key>
+            <PropertyRef Name="StageId" />
+          </Key>
+          <Property Name="StageId" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="projectId" Type="int" Nullable="false" />
+          <Property Name="buildSequence" Type="real" />
+          <Property Name="StageName" Type="nvarchar" Nullable="false" MaxLength="50" />
+          <Property Name="StageAbbreviation" Type="nvarchar" MaxLength="50" />
+          <Property Name="extension" Type="nvarchar" MaxLength="50" />
+          <Property Name="schematic" Type="bit" Nullable="false" />
+          <Property Name="top" Type="bit" Nullable="false" />
+          <Property Name="bottom" Type="bit" Nullable="false" />
+          <Property Name="theory" Type="nvarchar(max)" />
+          <Property Name="intro" Type="nvarchar(max)" />
+          <Property Name="pageMap" Type="nvarchar(max)" />
+          <Property Name="band_specific_url" Type="nvarchar(max)" />
+          <Property Name="completedNotes" Type="nvarchar(max)" />
+          <Property Name="topFirst" Type="bit" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Step">
+          <Key>
+            <PropertyRef Name="StepId" />
+          </Key>
+          <Property Name="StepId" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
+          <Property Name="StepName" Type="nvarchar" MaxLength="50" />
+          <Property Name="bottom" Type="bit" Nullable="false" />
+          <Property Name="sequence" Type="real" />
+          <Property Name="description" Type="nvarchar(max)" />
+          <Property Name="Stageid" Type="int" />
+          <Property Name="photoLink" Type="nvarchar" MaxLength="255" />
+          <Property Name="nameAnchor" Type="nvarchar" MaxLength="50" />
+          <Property Name="inductor_help" Type="bit" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_BOM_Band">
+          <End Role="Band" Type="SoftrockDocsStagingModel.Store.Band" Multiplicity="0..1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.Store.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Band">
+              <PropertyRef Name="bandId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="bandId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Component">
+          <End Role="Component" Type="SoftrockDocsStagingModel.Store.Component" Multiplicity="1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.Store.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Component">
+              <PropertyRef Name="componentId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="componentId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Projects">
+          <End Role="Projects" Type="SoftrockDocsStagingModel.Store.Projects" Multiplicity="1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.Store.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Projects">
+              <PropertyRef Name="projectId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="projectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Stage">
+          <End Role="Stage" Type="SoftrockDocsStagingModel.Store.Stage" Multiplicity="0..1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.Store.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Stage">
+              <PropertyRef Name="StageId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="stageId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Step">
+          <End Role="Step" Type="SoftrockDocsStagingModel.Store.Step" Multiplicity="0..1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.Store.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Step">
+              <PropertyRef Name="StepId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="stepId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Component_ComponentType">
+          <End Role="ComponentType" Type="SoftrockDocsStagingModel.Store.ComponentType" Multiplicity="0..1" />
+          <End Role="Component" Type="SoftrockDocsStagingModel.Store.Component" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ComponentType">
+              <PropertyRef Name="componentType" />
+            </Principal>
+            <Dependent Role="Component">
+              <PropertyRef Name="componentType" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Stage_Project">
+          <End Role="Projects" Type="SoftrockDocsStagingModel.Store.Projects" Multiplicity="1" />
+          <End Role="Stage" Type="SoftrockDocsStagingModel.Store.Stage" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Projects">
+              <PropertyRef Name="projectId" />
+            </Principal>
+            <Dependent Role="Stage">
+              <PropertyRef Name="projectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Step_Stage">
+          <End Role="Stage" Type="SoftrockDocsStagingModel.Store.Stage" Multiplicity="0..1" />
+          <End Role="Step" Type="SoftrockDocsStagingModel.Store.Step" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Stage">
+              <PropertyRef Name="StageId" />
+            </Principal>
+            <Dependent Role="Step">
+              <PropertyRef Name="Stageid" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="SoftrockDocsStagingModel" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+        <EntityContainer Name="SoftrockDocsStagingEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Bands" EntityType="SoftrockDocsStagingModel.Band" />
+          <EntitySet Name="BOMs" EntityType="SoftrockDocsStagingModel.BOM" />
+          <EntitySet Name="Components" EntityType="SoftrockDocsStagingModel.Component" />
+          <EntitySet Name="ComponentTypes" EntityType="SoftrockDocsStagingModel.ComponentType" />
+          <EntitySet Name="Projects" EntityType="SoftrockDocsStagingModel.Project" />
+          <EntitySet Name="Stages" EntityType="SoftrockDocsStagingModel.Stage" />
+          <EntitySet Name="Steps" EntityType="SoftrockDocsStagingModel.Step" />
+          <AssociationSet Name="FK_BOM_Band" Association="SoftrockDocsStagingModel.FK_BOM_Band">
+            <End Role="Band" EntitySet="Bands" />
+            <End Role="BOM" EntitySet="BOMs" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Component" Association="SoftrockDocsStagingModel.FK_BOM_Component">
+            <End Role="Component" EntitySet="Components" />
+            <End Role="BOM" EntitySet="BOMs" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Projects" Association="SoftrockDocsStagingModel.FK_BOM_Projects">
+            <End Role="Projects" EntitySet="Projects" />
+            <End Role="BOM" EntitySet="BOMs" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Stage" Association="SoftrockDocsStagingModel.FK_BOM_Stage">
+            <End Role="Stage" EntitySet="Stages" />
+            <End Role="BOM" EntitySet="BOMs" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BOM_Step" Association="SoftrockDocsStagingModel.FK_BOM_Step">
+            <End Role="Step" EntitySet="Steps" />
+            <End Role="BOM" EntitySet="BOMs" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Component_ComponentType" Association="SoftrockDocsStagingModel.FK_Component_ComponentType">
+            <End Role="ComponentType" EntitySet="ComponentTypes" />
+            <End Role="Component" EntitySet="Components" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Stage_Project" Association="SoftrockDocsStagingModel.FK_Stage_Project">
+            <End Role="Projects" EntitySet="Projects" />
+            <End Role="Stage" EntitySet="Stages" />
+          </AssociationSet>
+          <AssociationSet Name="FK_Step_Stage" Association="SoftrockDocsStagingModel.FK_Step_Stage">
+            <End Role="Stage" EntitySet="Stages" />
+            <End Role="Step" EntitySet="Steps" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="Band">
+          <Key>
+            <PropertyRef Name="bandId" />
+          </Key>
+          <Property Name="bandId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="bandName" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="lowFreq" Type="Int32" />
+          <Property Name="hiFreq" Type="Int32" />
+          <Property Name="sequence" Type="Int32" />
+          <NavigationProperty Name="BOMs" Relationship="SoftrockDocsStagingModel.FK_BOM_Band" FromRole="Band" ToRole="BOM" />
+        </EntityType>
+        <EntityType Name="BOM">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="designation" Type="String" Nullable="false" MaxLength="100" Unicode="true" FixedLength="true" />
+          <Property Name="componentId" Type="Int32" Nullable="false" />
+          <Property Name="projectId" Type="Int32" Nullable="false" />
+          <Property Name="stageId" Type="Int32" />
+          <Property Name="stepId" Type="Int32" />
+          <Property Name="bottom_or_top" Type="String" MaxLength="10" Unicode="true" FixedLength="true" />
+          <Property Name="buildSeq" Type="Decimal" Precision="18" Scale="2" />
+          <Property Name="stepSeq" Type="Decimal" Precision="18" Scale="2" />
+          <Property Name="orientation" Type="String" MaxLength="50" Unicode="true" FixedLength="true" />
+          <Property Name="notes" Type="String" MaxLength="3000" Unicode="true" FixedLength="true" />
+          <Property Name="bandId" Type="Int32" />
+          <NavigationProperty Name="Band" Relationship="SoftrockDocsStagingModel.FK_BOM_Band" FromRole="BOM" ToRole="Band" />
+          <NavigationProperty Name="Component" Relationship="SoftrockDocsStagingModel.FK_BOM_Component" FromRole="BOM" ToRole="Component" />
+          <NavigationProperty Name="Project" Relationship="SoftrockDocsStagingModel.FK_BOM_Projects" FromRole="BOM" ToRole="Projects" />
+          <NavigationProperty Name="Stage" Relationship="SoftrockDocsStagingModel.FK_BOM_Stage" FromRole="BOM" ToRole="Stage" />
+          <NavigationProperty Name="Step" Relationship="SoftrockDocsStagingModel.FK_BOM_Step" FromRole="BOM" ToRole="Step" />
+          <Property Type="Decimal" Name="testField" Precision="18" Scale="2" />
+        </EntityType>
+        <EntityType Name="Component">
+          <Key>
+            <PropertyRef Name="componentId" />
+          </Key>
+          <Property Name="componentId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="component1" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="numericValue" Type="Double" />
+          <Property Name="marking" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="category" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="componentType" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="photoLink" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="notes" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="datasheet" Type="String" MaxLength="250" Unicode="true" FixedLength="false" />
+          <Property Name="esd" Type="Boolean" Nullable="false" />
+          <Property Name="nospace" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="hide_from_step" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="BOMs" Relationship="SoftrockDocsStagingModel.FK_BOM_Component" FromRole="Component" ToRole="BOM" />
+          <NavigationProperty Name="ComponentType1" Relationship="SoftrockDocsStagingModel.FK_Component_ComponentType" FromRole="Component" ToRole="ComponentType" />
+        </EntityType>
+        <EntityType Name="ComponentType">
+          <Key>
+            <PropertyRef Name="componentType1" />
+          </Key>
+          <Property Name="componentType1" Type="String" Nullable="false" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="prefix" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="Components" Relationship="SoftrockDocsStagingModel.FK_Component_ComponentType" FromRole="ComponentType" ToRole="Component" />
+        </EntityType>
+        <EntityType Name="Project">
+          <Key>
+            <PropertyRef Name="projectId" />
+          </Key>
+          <Property Name="projectId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="projectName" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="projectType" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="workingDirectory" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="summaryBuildNotes" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="beta" Type="Boolean" Nullable="false" />
+          <Property Name="website" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="webroot" Type="String" MaxLength="250" Unicode="true" FixedLength="false" />
+          <Property Name="full_schematic" Type="Boolean" Nullable="false" />
+          <Property Name="completed_pictures" Type="Boolean" Nullable="false" />
+          <Property Name="red_dots" Type="Boolean" Nullable="false" />
+          <Property Name="vendor" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="detailed_BOM" Type="Boolean" Nullable="false" />
+          <Property Name="schematicLink" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="band_specific_links" Type="Boolean" Nullable="false" />
+          <Property Name="maxinventory" Type="Boolean" Nullable="false" />
+          <Property Name="schematicNotes" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="inventoryNotes" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <NavigationProperty Name="BOMs" Relationship="SoftrockDocsStagingModel.FK_BOM_Projects" FromRole="Projects" ToRole="BOM" />
+          <NavigationProperty Name="Stages" Relationship="SoftrockDocsStagingModel.FK_Stage_Project" FromRole="Projects" ToRole="Stage" />
+          <Property Type="String" Name="projectFolder" MaxLength="150" FixedLength="true" Unicode="true" />
+        </EntityType>
+        <EntityType Name="Stage">
+          <Key>
+            <PropertyRef Name="StageId" />
+          </Key>
+          <Property Name="StageId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="projectId" Type="Int32" Nullable="false" />
+          <Property Name="buildSequence" Type="Single" />
+          <Property Name="StageName" Type="String" Nullable="false" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="StageAbbreviation" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="extension" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="schematic" Type="Boolean" Nullable="false" />
+          <Property Name="top" Type="Boolean" Nullable="false" />
+          <Property Name="bottom" Type="Boolean" Nullable="false" />
+          <Property Name="theory" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="intro" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="pageMap" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="band_specific_url" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="completedNotes" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="topFirst" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="BOMs" Relationship="SoftrockDocsStagingModel.FK_BOM_Stage" FromRole="Stage" ToRole="BOM" />
+          <NavigationProperty Name="Project" Relationship="SoftrockDocsStagingModel.FK_Stage_Project" FromRole="Stage" ToRole="Projects" />
+          <NavigationProperty Name="Steps" Relationship="SoftrockDocsStagingModel.FK_Step_Stage" FromRole="Stage" ToRole="Step" />
+        </EntityType>
+        <EntityType Name="Step">
+          <Key>
+            <PropertyRef Name="StepId" />
+          </Key>
+          <Property Name="StepId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="StepName" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="bottom" Type="Boolean" Nullable="false" />
+          <Property Name="sequence" Type="Single" />
+          <Property Name="description" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="Stageid" Type="Int32" />
+          <Property Name="photoLink" Type="String" MaxLength="255" Unicode="true" FixedLength="false" />
+          <Property Name="nameAnchor" Type="String" MaxLength="50" Unicode="true" FixedLength="false" />
+          <Property Name="inductor_help" Type="Boolean" Nullable="false" />
+          <NavigationProperty Name="BOMs" Relationship="SoftrockDocsStagingModel.FK_BOM_Step" FromRole="Step" ToRole="BOM" />
+          <NavigationProperty Name="Stage" Relationship="SoftrockDocsStagingModel.FK_Step_Stage" FromRole="Step" ToRole="Stage" />
+        </EntityType>
+        <Association Name="FK_BOM_Band">
+          <End Role="Band" Type="SoftrockDocsStagingModel.Band" Multiplicity="0..1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Band">
+              <PropertyRef Name="bandId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="bandId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Component">
+          <End Role="Component" Type="SoftrockDocsStagingModel.Component" Multiplicity="1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Component">
+              <PropertyRef Name="componentId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="componentId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Projects">
+          <End Role="Projects" Type="SoftrockDocsStagingModel.Project" Multiplicity="1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Projects">
+              <PropertyRef Name="projectId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="projectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Stage">
+          <End Role="Stage" Type="SoftrockDocsStagingModel.Stage" Multiplicity="0..1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Stage">
+              <PropertyRef Name="StageId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="stageId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BOM_Step">
+          <End Role="Step" Type="SoftrockDocsStagingModel.Step" Multiplicity="0..1" />
+          <End Role="BOM" Type="SoftrockDocsStagingModel.BOM" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Step">
+              <PropertyRef Name="StepId" />
+            </Principal>
+            <Dependent Role="BOM">
+              <PropertyRef Name="stepId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Component_ComponentType">
+          <End Role="ComponentType" Type="SoftrockDocsStagingModel.ComponentType" Multiplicity="0..1" />
+          <End Role="Component" Type="SoftrockDocsStagingModel.Component" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ComponentType">
+              <PropertyRef Name="componentType1" />
+            </Principal>
+            <Dependent Role="Component">
+              <PropertyRef Name="componentType" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Stage_Project">
+          <End Role="Projects" Type="SoftrockDocsStagingModel.Project" Multiplicity="1" />
+          <End Role="Stage" Type="SoftrockDocsStagingModel.Stage" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Projects">
+              <PropertyRef Name="projectId" />
+            </Principal>
+            <Dependent Role="Stage">
+              <PropertyRef Name="projectId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_Step_Stage">
+          <End Role="Stage" Type="SoftrockDocsStagingModel.Stage" Multiplicity="0..1" />
+          <End Role="Step" Type="SoftrockDocsStagingModel.Step" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Stage">
+              <PropertyRef Name="StageId" />
+            </Principal>
+            <Dependent Role="Step">
+              <PropertyRef Name="Stageid" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2008/09/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="SoftrockDocsStagingModelStoreContainer" CdmEntityContainer="SoftrockDocsStagingEntities">
+          <EntitySetMapping Name="Bands"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.Band"><MappingFragment StoreEntitySet="Band">
+            <ScalarProperty Name="bandId" ColumnName="bandId" />
+            <ScalarProperty Name="bandName" ColumnName="bandName" />
+            <ScalarProperty Name="lowFreq" ColumnName="lowFreq" />
+            <ScalarProperty Name="hiFreq" ColumnName="hiFreq" />
+            <ScalarProperty Name="sequence" ColumnName="sequence" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="BOMs"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.BOM"><MappingFragment StoreEntitySet="BOM">
+            <ScalarProperty Name="testField" ColumnName="testField" />
+                <ScalarProperty Name="id" ColumnName="id" />
+            <ScalarProperty Name="designation" ColumnName="designation" />
+            <ScalarProperty Name="componentId" ColumnName="componentId" />
+            <ScalarProperty Name="projectId" ColumnName="projectId" />
+            <ScalarProperty Name="stageId" ColumnName="stageId" />
+            <ScalarProperty Name="stepId" ColumnName="stepId" />
+            <ScalarProperty Name="bottom_or_top" ColumnName="bottom_or_top" />
+            <ScalarProperty Name="buildSeq" ColumnName="buildSeq" />
+            <ScalarProperty Name="stepSeq" ColumnName="stepSeq" />
+            <ScalarProperty Name="orientation" ColumnName="orientation" />
+            <ScalarProperty Name="notes" ColumnName="notes" />
+            <ScalarProperty Name="bandId" ColumnName="bandId" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Components"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.Component"><MappingFragment StoreEntitySet="Component">
+            <ScalarProperty Name="componentId" ColumnName="componentId" />
+            <ScalarProperty Name="component1" ColumnName="component" />
+            <ScalarProperty Name="numericValue" ColumnName="numericValue" />
+            <ScalarProperty Name="marking" ColumnName="marking" />
+            <ScalarProperty Name="category" ColumnName="category" />
+            <ScalarProperty Name="componentType" ColumnName="componentType" />
+            <ScalarProperty Name="photoLink" ColumnName="photoLink" />
+            <ScalarProperty Name="notes" ColumnName="notes" />
+            <ScalarProperty Name="datasheet" ColumnName="datasheet" />
+            <ScalarProperty Name="esd" ColumnName="esd" />
+            <ScalarProperty Name="nospace" ColumnName="nospace" />
+            <ScalarProperty Name="hide_from_step" ColumnName="hide_from_step" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="ComponentTypes"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.ComponentType"><MappingFragment StoreEntitySet="ComponentType">
+            <ScalarProperty Name="componentType1" ColumnName="componentType" />
+            <ScalarProperty Name="prefix" ColumnName="prefix" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Projects"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.Project"><MappingFragment StoreEntitySet="Projects">
+            <ScalarProperty Name="projectFolder" ColumnName="projectFolder" />
+                <ScalarProperty Name="projectId" ColumnName="projectId" />
+            <ScalarProperty Name="projectName" ColumnName="projectName" />
+            <ScalarProperty Name="projectType" ColumnName="projectType" />
+            <ScalarProperty Name="workingDirectory" ColumnName="workingDirectory" />
+            <ScalarProperty Name="summaryBuildNotes" ColumnName="summaryBuildNotes" />
+            <ScalarProperty Name="beta" ColumnName="beta" />
+            <ScalarProperty Name="website" ColumnName="website" />
+            <ScalarProperty Name="webroot" ColumnName="webroot" />
+            <ScalarProperty Name="full_schematic" ColumnName="full_schematic" />
+            <ScalarProperty Name="completed_pictures" ColumnName="completed_pictures" />
+            <ScalarProperty Name="red_dots" ColumnName="red_dots" />
+            <ScalarProperty Name="vendor" ColumnName="vendor" />
+            <ScalarProperty Name="detailed_BOM" ColumnName="detailed_BOM" />
+            <ScalarProperty Name="schematicLink" ColumnName="schematicLink" />
+            <ScalarProperty Name="band_specific_links" ColumnName="band_specific_links" />
+            <ScalarProperty Name="maxinventory" ColumnName="maxinventory" />
+            <ScalarProperty Name="schematicNotes" ColumnName="schematicNotes" />
+            <ScalarProperty Name="inventoryNotes" ColumnName="inventoryNotes" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Stages"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.Stage"><MappingFragment StoreEntitySet="Stage">
+            <ScalarProperty Name="StageId" ColumnName="StageId" />
+            <ScalarProperty Name="projectId" ColumnName="projectId" />
+            <ScalarProperty Name="buildSequence" ColumnName="buildSequence" />
+            <ScalarProperty Name="StageName" ColumnName="StageName" />
+            <ScalarProperty Name="StageAbbreviation" ColumnName="StageAbbreviation" />
+            <ScalarProperty Name="extension" ColumnName="extension" />
+            <ScalarProperty Name="schematic" ColumnName="schematic" />
+            <ScalarProperty Name="top" ColumnName="top" />
+            <ScalarProperty Name="bottom" ColumnName="bottom" />
+            <ScalarProperty Name="theory" ColumnName="theory" />
+            <ScalarProperty Name="intro" ColumnName="intro" />
+            <ScalarProperty Name="pageMap" ColumnName="pageMap" />
+            <ScalarProperty Name="band_specific_url" ColumnName="band_specific_url" />
+            <ScalarProperty Name="completedNotes" ColumnName="completedNotes" />
+            <ScalarProperty Name="topFirst" ColumnName="topFirst" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+          <EntitySetMapping Name="Steps"><EntityTypeMapping TypeName="SoftrockDocsStagingModel.Step"><MappingFragment StoreEntitySet="Step">
+            <ScalarProperty Name="StepId" ColumnName="StepId" />
+            <ScalarProperty Name="StepName" ColumnName="StepName" />
+            <ScalarProperty Name="bottom" ColumnName="bottom" />
+            <ScalarProperty Name="sequence" ColumnName="sequence" />
+            <ScalarProperty Name="description" ColumnName="description" />
+            <ScalarProperty Name="Stageid" ColumnName="Stageid" />
+            <ScalarProperty Name="photoLink" ColumnName="photoLink" />
+            <ScalarProperty Name="nameAnchor" ColumnName="nameAnchor" />
+            <ScalarProperty Name="inductor_help" ColumnName="inductor_help" />
+          </MappingFragment></EntityTypeMapping></EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2008/10/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="True" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams>
+      <Diagram Name="Model" ZoomLevel="96">
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.Band" Width="1.5" PointX="5.25" PointY="4.625" Height="1.9436327856779094" IsExpanded="true" />
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.BOM" Width="1.5" PointX="7.5" PointY="5.75" Height="3.7791145237286869" IsExpanded="true" />
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.Component" Width="1.5" PointX="5.25" PointY="13.375" Height="3.2785285951693837" IsExpanded="true" />
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.ComponentType" Width="1.5" PointX="2.625" PointY="13.5" Height="1.4430468571186061" IsExpanded="true" />
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.Project" Width="1.5" PointX="0.75" PointY="3.375" Height="4.279700452287992" IsExpanded="true" />
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.Stage" Width="1.5" PointX="3" PointY="8" Height="3.9459764999151226" IsExpanded="true" />
+        <EntityTypeShape EntityType="SoftrockDocsStagingModel.Step" Width="1.5" PointX="5.25" PointY="8.625" Height="2.7779426666100804" IsExpanded="true" />
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_BOM_Band" ManuallyRouted="false">
+          <ConnectorPoint PointX="6.75" PointY="6.1593163928389547" />
+          <ConnectorPoint PointX="7.5" PointY="6.1593163928389547" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_BOM_Component" ManuallyRouted="false">
+          <ConnectorPoint PointX="6.75" PointY="15.014264297584692" />
+          <ConnectorPoint PointX="8.25" PointY="15.014264297584692" />
+          <ConnectorPoint PointX="8.25" PointY="9.5291145237286869" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_BOM_Projects" ManuallyRouted="false">
+          <ConnectorPoint PointX="2.25" PointY="7.1429166189829507" />
+          <ConnectorPoint PointX="3.6666666666666665" PointY="7.14291661898295" />
+          <ConnectorPoint PointX="3.8333333333333335" PointY="7.1429166189829507" />
+          <ConnectorPoint PointX="7.5" PointY="7.1429166189829507" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_BOM_Stage" ManuallyRouted="false">
+          <ConnectorPoint PointX="4.5" PointY="8.28125" />
+          <ConnectorPoint PointX="7.5" PointY="8.28125" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_BOM_Step" ManuallyRouted="false">
+          <ConnectorPoint PointX="6.75" PointY="9.0770572618643435" />
+          <ConnectorPoint PointX="7.5" PointY="9.0770572618643435" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_Component_ComponentType" ManuallyRouted="false">
+          <ConnectorPoint PointX="4.125" PointY="14.221523428559303" />
+          <ConnectorPoint PointX="5.25" PointY="14.221523428559303" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_Stage_Project" ManuallyRouted="false">
+          <ConnectorPoint PointX="2.25" PointY="5.227705809491475" />
+          <ConnectorPoint PointX="3.75" PointY="5.227705809491475" />
+          <ConnectorPoint PointX="3.75" PointY="8" />
+        </AssociationConnector>
+        <AssociationConnector Association="SoftrockDocsStagingModel.FK_Step_Stage" ManuallyRouted="false">
+          <ConnectorPoint PointX="4.5" PointY="10.01397133330504" />
+          <ConnectorPoint PointX="5.25" PointY="10.01397133330504" />
+        </AssociationConnector>
+      </Diagram>
+    </Diagrams>
+  </Designer>
+</edmx:Edmx>

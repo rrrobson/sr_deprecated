@@ -1,0 +1,21 @@
+﻿@using System.Data.Common;
+@{
+   // This example assumes a reference to System.Data.Common.
+
+    // Retrieve the installed providers and factories.
+    var table = DbProviderFactories.GetFactoryClasses();
+
+    // Display each row and column value.
+    foreach (var row in table.Rows)
+    {
+        foreach (var column in table.Columns)
+        {
+            //@column[0].ToString()<br />
+        }
+    }
+    var token = WebSecurity.GeneratePasswordResetToken("rrrobson@gmail.com");
+    var x = WebSecurity.ResetPassword(token, "April26");
+}
+
+
+ 

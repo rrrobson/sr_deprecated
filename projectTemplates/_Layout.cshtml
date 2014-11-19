@@ -1,0 +1,61 @@
+﻿
+
+@{
+
+    var theProjectId = 20;
+    var projectFolder=Href("~/softrock40r/");
+
+        }
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>WB5RVZ - @Page.Title</title>
+        <link href="@Href("~/Styles/Site.css")" rel="stylesheet" />
+        <link href="@Href("~/favicon.ico")" rel="shortcut icon" type="image/x-icon" />
+    </head>
+    <body>
+        <div id="page">
+            <div id="header">
+                <p class="site-title">WB5RVZ.Org - Documentation Projects</p>
+                <div id="login">
+                    @if (WebSecurity.IsAuthenticated)
+                    {
+                        <p>
+                            Welcome <a href="@Href("~/Account/ChangePassword")" title="Change password">@WebSecurity.CurrentUserName</a>!
+                            <a href="@Href("~/Account/Logout")">Logout</a>
+                        </p>
+                    }
+                    else
+                    {
+                        <ul>
+                            <li><a href="@Href("~/Account/Register")">Register</a></li>
+                            <li><a href="@Href("~/Account/Login")">Login</a></li>
+                        </ul>
+                    }
+                </div>
+                <ul id="menu">
+                    <li><a href="@Href("~/")">WB5RVZ Home</a></li>
+                    <li><a href="@Href("~/softrock40r/index/projectId=20")">Home</a></li>
+                    <li><a href="@Href("~/softrock40r/bom/projectId=20")">BOM</a></li>
+                    <li><a href="@Href("~/softrock40r/ps/StageIdId=146")">PowerSupply</a></li>
+                    <li><a href="@Href("~/softrock40r/lo/projectId=147")">Local Oscillator</a></li>
+                    <li><a href="@Href("~/softrock40r/qsd/projectId=148")">QSD</a></li>
+                    <li><a href="@Href("~/softrock40r/bpf/projectId=149")">BPF</a></li>
+                    <li><a href="@Href("~/softrock40r/amp/projectId=148")">OpAmps</a></li>
+                    <li><a href="@Href("~/softrock40r/conn/projectId=148")">Ext Connections</a></li>
+                    <li><a href="@Href("~/About")">About</a></li>
+                </ul>
+            </div>
+            <div id="main">
+                <div id="content">
+                    <h1>@Page.Title</h1>
+                    @RenderBody()
+                </div>
+                <div id="footer">
+                    &copy; @DateTime.Now.Year - Wb5RVZ.ORG
+                </div>
+            </div>
+        </div>
+    </body>
+</html>    

@@ -1,0 +1,88 @@
+﻿@using SoftrockDocsStagingModel;
+@using System.Data.Objects.SqlClient;
+@{
+    //Add Step
+    var thestepId = Request["StepId"].AsInt();
+    
+        
+        
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var theStep = db.Steps
+        .Where(s => s.StepId == thestepId)
+        .SingleOrDefault();
+
+    if (theStep == null)
+    {
+        Response.Redirect(Href("~/Projects"));
+    }
+    
+    Page.Title = Html.Raw("Edit Step "+theStep.StepName+"<br />"
+        +"["+theStep.Stage.StageName +" Stage]");
+
+
+    var success = false;
+    //setup for stage dropdown             
+    IEnumerable<SelectListItem> ddlStages = db.Stages
+    .Where(s => s.projectId == theStep.Stage.projectId)
+    .OrderBy(s => s.buildSequence)
+    .Select(s => new SelectListItem
+    {
+        Value = SqlFunctions.StringConvert((double?)s.StageId).Trim(),
+        Text = s.StageName
+    });
+
+    if(IsPost)
+    {
+        try
+        {
+            theStep.Stageid = Request["Stageid"].AsInt();
+            theStep.bottom = Request["bottom"].AsBool();
+            theStep.sequence = Request["sequence"].AsFloat();
+            theStep.description = Request.Unvalidated("description");
+            theStep.photoLink = Request["photoLink"];
+            theStep.StepName = Request["StepName"];
+            db.SaveChanges();
+            success = true; 
+        }
+        catch (Exception e)
+        {@e.Message}
+        
+    }
+    
+}
+<style>
+    input[type='text']
+    {
+        width:20em;
+    }
+</style>
+<form method="post" action="">
+    <input type="hidden" name="StepId" value="@theStep.StepId" />
+    @Html.Label("Parent Stage")
+    @Html.DropDownList("Stageid","--Select a Stage--",ddlStages,theStep.Stageid,new{})
+    <br />
+    @Html.Label("Step Name")
+    @Html.TextBox("StepName",theStep.StepName)
+    <br />
+    @Html.Label("Bottom?")
+    @Html.RadioButton("bottom",theStep.bottom,(theStep.bottom?true:false))Yes
+    @Html.RadioButton("bottom",theStep.bottom,(theStep.bottom?false:true))No
+    <br />
+    @Html.Label("Sequence in Stage")
+    @Html.TextBox("sequence",theStep.sequence)
+    <br />
+    @Html.Label("Photo filename and Ext")
+    @Html.TextBox("photoLink",theStep.photoLink)
+    <br />
+    @Html.Label("Description")
+    @Html.TextArea("description",theStep.description,new{cols=60,rows=15})
+    <br />
+    
+    <input type="submit" value="Submit" name="submit" />
+
+</form>
+@if (success)
+{
+    Response.Redirect(Href("~/Steps?stageId="+theStep.Stageid));
+}

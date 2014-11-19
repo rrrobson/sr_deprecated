@@ -1,0 +1,72 @@
+﻿@using SoftrockDocsStagingModel;
+@{
+//Add Step
+    var theStageId = Request["StageId"].AsInt();
+    
+        
+        
+    Layout = "~/_SiteLayout.cshtml";
+    var db = new SoftrockDocsStagingEntities();
+    var theStage = db.Stages
+        .Where(s => s.StageId == theStageId)
+        .SingleOrDefault();
+    Page.Title = "ADD New Step to Stage=" + theStage.StageName;
+    
+    var stepName = Request["stepName"];
+    var bottom = Request["bottom"].AsBool();
+    var StageId = Request["StageId"].AsInt();
+    var sequence = Request["sequence"].AsFloat();
+    var description = Request.Unvalidated("description");
+    if (IsPost)
+    {
+        if(String.IsNullOrEmpty(stepName))
+        {
+            ModelState.AddError("stepName","Step name is required");
+        }
+        if(StageId==null)
+        {
+            ModelState.AddError("StageId", "Lost hidden stage id");
+        }
+        if(ModelState.IsValid)
+        {
+            try
+            {
+                Step record=new Step();
+                record.StepName=stepName;
+                record.bottom=bottom;
+                record.sequence=sequence;
+                record.description=description;
+                record.Stageid=StageId;
+                db.Steps.AddObject(record);
+                db.SaveChanges();
+            }
+            catch (Exception e)
+            {@e.Message}
+            Response.Redirect(Href("~/Steps/Index?StageId=" + theStageId));
+        }
+    }        
+    
+        
+}
+<form method="post" action="">
+@Html.ValidationSummary("Correct following errors")
+@Html.Label("Parent Stage")
+@Html.Label(theStage.StageName)
+@Html.Hidden("StageId",theStageId)
+<br />
+@Html.Label("Step Name")
+@Html.TextBox("stepName")
+<br />
+@Html.Label("Bottom?")
+@Html.RadioButton("bottom","true",true)Bottom
+@Html.RadioButton("bottom","false")Top
+<br />
+@Html.Label("Sequence in Stage")
+@Html.TextBox("sequence")
+<br />
+@Html.Label("Description")
+@Html.TextArea("description", new { cols=60, rows=15})
+<br />
+<input type="submit" value="Submit" />
+
+</form>
